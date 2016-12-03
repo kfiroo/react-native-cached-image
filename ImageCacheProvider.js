@@ -148,6 +148,13 @@ function getCachedImagePath(url, options = defaultOptions) {
                 // reject the promise if res is not a file
                 throw new Error('Failed to get image from cache');
             }
+            if (!res.size) {
+                // something went wrong with the download, file size is 0, remove it
+                return deleteFile(filePath)
+                    .then(() => {
+                        throw new Error('Failed to get image from cache');
+                    });
+            }
             return filePath;
         })
         .catch(err => {
