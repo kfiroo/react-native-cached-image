@@ -92,12 +92,13 @@ function downloadImage(fromUrl, toFile) {
                 toFile
             };
             RNFS.downloadFile(downloadOptions).promise
-                .then(() => {
+                .then(res => {
                     resolve(toFile);
                 })
-                .catch(err => deleteFile(toFile)
-                    .then(() => reject(err))
-                )
+                .catch(err => {
+                    return deleteFile(toFile)
+                        .then(() => reject(err))
+                })
                 .finally(() => {
                     // cleanup
                     delete activeDownloads[toFile];
@@ -125,7 +126,7 @@ function runPrefetchTask(prefetcher, options) {
     if (isCacheable(url)) {
         // check cache
         return getCachedImagePath(url, options)
-            // if not found download
+        // if not found download
             .catch(() => cacheImage(url, options))
             // then run next task
             .then(() => runPrefetchTask(prefetcher, options));
@@ -184,7 +185,7 @@ function cacheMultipleImages(urls, options = defaultOptions) {
 
 function deleteMultipleCachedImages(urls, options = defaultOptions) {
     return _.reduce(urls, (p, url) =>
-        p.then(() => deleteCachedImage(url, options)),
+            p.then(() => deleteCachedImage(url, options)),
         Promise.resolve()
     );
 }

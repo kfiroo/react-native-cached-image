@@ -21,8 +21,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent'
     },
     loader: {
-        backgroundColor: 'transparent',
-        flex: 1
+        backgroundColor: 'transparent'
     }
 });
 
@@ -48,7 +47,7 @@ const CacheableImage = React.createClass({
     getInitialState() {
         this._isMounted = false;
         return {
-            isRemote: false,
+            isCacheable: false,
             cachedImagePath: null,
             jobId: null,
             networkAvailable: true
@@ -107,23 +106,22 @@ const CacheableImage = React.createClass({
                     });
                 })
                 .catch(err => {
-                    console.log('>>> error ', err);
                     this.safeSetState({
                         cachedImagePath: null
                     });
                 });
             this.safeSetState({
-                isRemote: true
+                isCacheable: true
             });
         } else {
             this.safeSetState({
-                isRemote: false
+                isCacheable: false
             });
         }
     },
 
     render() {
-        if (!this.state.isRemote) {
+        if (!this.state.isCacheable) {
             return this.renderLocal();
         }
         if (this.state.cachedImagePath) {
