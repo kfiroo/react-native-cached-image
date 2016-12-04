@@ -37,10 +37,11 @@ function getQueryForCacheKey(url, useQueryParamsInCacheKey) {
 function generateCacheKey(url, options) {
     const parsedUrl = new URL(url, null, true);
     const parts = parsedUrl.pathname.split('.');
-    const type = parts.length > 1 ? ('.' + parts.pop()) : '';
+    // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
+    const type = parts.length > 1 ? parts.pop() : 'jpg';
     const pathname = parts.join('.');
     const cacheable = pathname + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
-    return SHA1(cacheable) + type;
+    return SHA1(cacheable) + '.' + type;
 }
 
 function getCachePath(url, options) {
@@ -190,11 +191,16 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
     );
 }
 
+function clearCache() {
+
+}
+
 module.exports = {
     isCacheable,
     getCachedImagePath,
     cacheImage,
     deleteCachedImage,
     cacheMultipleImages,
-    deleteMultipleCachedImages
+    deleteMultipleCachedImages,
+    clearCache
 };
