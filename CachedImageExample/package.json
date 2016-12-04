@@ -4,18 +4,20 @@
   "private": true,
   "scripts": {
     "start": "node node_modules/react-native/local-cli/cli.js start",
-    "test": "jest"
+    "test": "jest",
+    "dev": "rm -rf ./node_modules/react-native-cached-image; sane 'rsync -av --include='*.js' --include='package.json' --exclude='*' ../ ./node_modules/react-native-cached-image' ../ --glob '*.js' --glob 'package.json'"
   },
   "dependencies": {
     "react": "15.4.1",
-    "react-native": "0.39.0",
+    "react-native": "0.38.0",
     "react-native-cached-image": "1.0.5"
   },
   "devDependencies": {
     "babel-jest": "17.0.2",
     "babel-preset-react-native": "1.9.0",
     "jest": "17.0.3",
-    "react-test-renderer": "15.4.1"
+    "react-test-renderer": "15.4.1",
+    "sane": "^1.4.1"
   },
   "jest": {
     "preset": "react-native"

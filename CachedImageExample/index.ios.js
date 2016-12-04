@@ -39,9 +39,8 @@ const styles = StyleSheet.create({
     }
 });
 
-const image1 = 'http://shushi168.com/data/out/123/36699123-images.png';
-// const image1 = 'https://d22cb02g3nv58u.cloudfront.net/0.607.0/assets/images/icons/fun-types/full/band-night-full.jpg';
-const image2 = 'https://d22cb02g3nv58u.cloudfront.net/0.607.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg';
+const image1 = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Big_Bog_State_Recreation_Area.jpg';
+const image2 = 'https://s-media-cache-ak0.pinimg.com/originals/62/a7/6f/62a76fde4009c4e3047b4b5e17899a8d.jpg';
 
 const CachedImageExample = React.createClass({
 
@@ -79,13 +78,11 @@ const CachedImageExample = React.createClass({
                         onPress={this.loadMore}
                         title="Load Next Image"
                         color="#841584"
-                        style={styles.button}
                     />
                     <Button
                         onPress={this.clearCache}
                         title="Clear Cache"
                         color="#0C42FD"
-                        style={styles.button}
                     />
                 </View>
                 <CachedImage
