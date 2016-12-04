@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const CacheableImage = React.createClass({
+const CachedImage = React.createClass({
     propTypes: {
         renderImage: React.PropTypes.func.isRequired,
         activityIndicatorProps: React.PropTypes.object.isRequired,
@@ -157,9 +157,9 @@ const CacheableImage = React.createClass({
     renderDefaultSource() {
         const {children, defaultSource, ...props} = this.props;
         return (
-            <CacheableImage {...props} source={defaultSource}>
+            <CachedImage {...props} source={defaultSource}>
                 {children}
-            </CacheableImage>
+            </CachedImage>
         );
     },
 
@@ -175,4 +175,4 @@ const CacheableImage = React.createClass({
     }
 });
 
-module.exports = CacheableImage;
+module.exports = CachedImage;
