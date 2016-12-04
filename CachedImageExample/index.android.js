@@ -4,9 +4,10 @@ const React = require('react');
 const ReactNative = require('react-native');
 
 const {
+    View,
     Button,
+    Dimensions,
     StyleSheet,
-    ScrollView,
     AppRegistry
 } = ReactNative;
 
@@ -15,28 +16,37 @@ const {
     ImageCacheProvider
 } = CachedImage;
 
+const {
+    width
+} = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        marginTop: 20
     },
     buttons: {
         flexDirection: 'row'
     },
     button: {
-        flex: 1
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    image: {
+        width,
+        height: 300
     }
 });
 
-const image1 = 'http://shushi168.com/data/out/123/36699123-images.png';
-const image2 = 'http://www.planwallpaper.com/static/images/images-7_kACPBns.jpg';
+const image1 = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Big_Bog_State_Recreation_Area.jpg';
+const image2 = 'https://s-media-cache-ak0.pinimg.com/originals/62/a7/6f/62a76fde4009c4e3047b4b5e17899a8d.jpg';
 
 const CachedImageExample = React.createClass({
 
     getInitialState() {
         return {
-            images: [
-                image1
-            ]
+            showNextImage: false
         };
     },
 
@@ -49,7 +59,7 @@ const CachedImageExample = React.createClass({
 
     loadMore() {
         this.setState({
-            loadMore: true
+            showNextImage: true
         })
     },
 
@@ -68,23 +78,29 @@ const CachedImageExample = React.createClass({
                         onPress={this.loadMore}
                         title="Load Next Image"
                         color="#841584"
-                        style={styles.button}
                     />
                     <Button
                         onPress={this.clearCache}
                         title="Clear Cache"
                         color="#0C42FD"
-                        style={styles.button}
                     />
                 </View>
-                <ScrollView style={styles.container}>
-                    {this.state.images.map(uri => (
+                <CachedImage
+                    source={{
+                        uri: image1
+                    }}
+                    style={styles.image}
+                />
+                {
+                    this.state.showNextImage && (
                         <CachedImage
-                            source={{uri}}
+                            source={{
+                                uri: image2
+                            }}
                             style={styles.image}
                         />
-                    ))}
-                </ScrollView>
+                    )
+                }
             </View>
         );
     }
