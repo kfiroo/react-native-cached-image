@@ -25,6 +25,7 @@ Add the following line to your android/app/src/AndroidManifest.xml
 
 ## API
 This package exposes 2 modules:
+
 1. `CachedImage` - `default` react-native component that is a drop-in replacement for your react-native `Image` components
 2. `ImageCacheProvider` - the cache API that you can use if you need to interact with the cache outside the scope of the component, for prefetching images for example.
 
