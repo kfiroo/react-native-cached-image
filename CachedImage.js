@@ -81,7 +81,7 @@ const CachedImage = React.createClass({
     },
 
     componentWillReceiveProps(nextProps) {
-        if (this.props.source !== nextProps.source) {
+        if (!_.isEqual(this.props.source, nextProps.source)) {
             this.processSource(nextProps.source);
         }
     },
