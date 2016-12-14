@@ -146,4 +146,30 @@ const CachedImage = React.createClass({
     }
 });
 
+/**
+ * Same as ReactNaive.Image.getSize only it will not download the image if it has a cached version
+ * @param uri
+ * @param success
+ * @param failure
+ * @param options
+ */
+CachedImage.getSize = function getSize(uri, success, failure, options) {
+    if (ImageCacheProvider.isCacheable(uri)) {
+        console.log('ImageCacheProvider.getCachedImagePath', uri);
+        ImageCacheProvider.getCachedImagePath(uri, options)
+            .then(imagePath => {
+                console.log('Image.getSize', imagePath);
+                Image.getSize(imagePath, success, failure);
+            })
+            .catch(err => {
+                console.warn(err.stack || err);
+                console.log('Image.getSize', uri);
+                Image.getSize(uri, success, failure);
+            });
+    } else {
+        console.log('Image.getSize', uri);
+        Image.getSize(uri, success, failure);
+    }
+};
+
 module.exports = CachedImage;
