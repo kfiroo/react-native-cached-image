@@ -29,7 +29,6 @@ const CachedImage = React.createClass({
     propTypes: {
         renderImage: React.PropTypes.func.isRequired,
         activityIndicatorProps: React.PropTypes.object.isRequired,
-        defaultSource: Image.propTypes.source,
         useQueryParamsInCacheKey: React.PropTypes.oneOfType([
             React.PropTypes.bool,
             React.PropTypes.array
@@ -49,7 +48,6 @@ const CachedImage = React.createClass({
         return {
             isCacheable: false,
             cachedImagePath: null,
-            jobId: null,
             networkAvailable: true
         };
     },
@@ -121,46 +119,19 @@ const CachedImage = React.createClass({
     },
 
     render() {
-        if (!this.state.isCacheable) {
-            return this.renderLocal();
+        if (this.state.isCacheable && !this.state.cachedImagePath) {
+            return this.renderLoader();
         }
-        if (this.state.cachedImagePath) {
-            return this.renderCache();
-        }
-        if (this.props.defaultSource) {
-            return this.renderDefaultSource();
-        }
-        return this.renderLoader();
-    },
-
-    renderLocal() {
-        const props = _.omit(this.props, ['defaultSource', 'activityIndicatorProps', 'style']);
+        const props = _.omit(this.props, ['source', 'activityIndicatorProps', 'style']);
         const style = this.props.style || styles.image;
-        return this.props.renderImage({
-            ...props,
-            style
-        });
-    },
-
-    renderCache() {
-        const props = _.omit(this.props, ['defaultSource', 'activityIndicatorProps', 'style']);
-        const style = this.props.style || styles.image;
+        const source = this.state.cachedImagePath ? {
+            uri: 'file://' + this.state.cachedImagePath
+        } : this.props.source;
         return this.props.renderImage({
             ...props,
             style,
-            source: {
-                uri: 'file://' + this.state.cachedImagePath
-            }
+            source
         });
-    },
-
-    renderDefaultSource() {
-        const {children, defaultSource, ...props} = this.props;
-        return (
-            <CachedImage {...props} source={defaultSource}>
-                {children}
-            </CachedImage>
-        );
     },
 
     renderLoader() {
