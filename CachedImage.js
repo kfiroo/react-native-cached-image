@@ -155,19 +155,14 @@ const CachedImage = React.createClass({
  */
 CachedImage.getSize = function getSize(uri, success, failure, options) {
     if (ImageCacheProvider.isCacheable(uri)) {
-        console.log('ImageCacheProvider.getCachedImagePath', uri);
         ImageCacheProvider.getCachedImagePath(uri, options)
             .then(imagePath => {
-                console.log('Image.getSize', imagePath);
                 Image.getSize(imagePath, success, failure);
             })
             .catch(err => {
-                console.warn(err.stack || err);
-                console.log('Image.getSize', uri);
                 Image.getSize(uri, success, failure);
             });
     } else {
-        console.log('Image.getSize', uri);
         Image.getSize(uri, success, failure);
     }
 };
