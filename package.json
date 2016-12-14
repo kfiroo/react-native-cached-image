@@ -1,6 +1,6 @@
 {
   "name": "react-native-cached-image",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "CachedImage component for react-native",
   "main": "index.js",
   "scripts": {
