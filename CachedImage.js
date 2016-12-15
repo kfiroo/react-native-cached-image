@@ -9,7 +9,8 @@ const ImageCacheProvider = require('./ImageCacheProvider');
 const {
     Image,
     ActivityIndicator,
-    NetInfo
+    NetInfo,
+    Platform
 } = ReactNative;
 
 const {
@@ -157,6 +158,9 @@ CachedImage.getSize = function getSize(uri, success, failure, options) {
     if (ImageCacheProvider.isCacheable(uri)) {
         ImageCacheProvider.getCachedImagePath(uri, options)
             .then(imagePath => {
+                if (Platform.OS === 'android') {
+                    imagePath = 'file://' + imagePath;
+                }
                 Image.getSize(imagePath, success, failure);
             })
             .catch(err => {
