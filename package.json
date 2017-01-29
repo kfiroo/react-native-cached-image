@@ -27,9 +27,9 @@
     "ImageCacheProvider.js"
   ],
   "dependencies": {
-    "crypto-js": "3.1.6",
-    "lodash": "4.17.2",
-    "react-native-fs": "2.0.1-rc.2",
-    "url-parse": "1.1.1"
+    "crypto-js": "3.1.9-1",
+    "lodash": "4.17.4",
+    "react-native-fs": "2.1.0-rc.1",
+    "url-parse": "1.1.7"
   }
 }
