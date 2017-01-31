@@ -26,6 +26,8 @@ const styles = StyleSheet.create({
     }
 });
 
+const CACHED_IMAGE_REF = 'cachedImage' + (Math.floor(Math.random() * 1000000));
+
 const CachedImage = React.createClass({
     propTypes: {
         renderImage: React.PropTypes.func.isRequired,
@@ -38,14 +40,18 @@ const CachedImage = React.createClass({
 
     getDefaultProps() {
         return {
-            renderImage: props => (<Image ref={this.refName} {...props}/>),
+            renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false
         };
     },
 
     setNativeProps(nativeProps) {
-        this.refs[this.refName].setNativeProps(nativeProps);
+        try {
+            this.refs[CACHED_IMAGE_REF].setNativeProps(nativeProps);
+        } catch (e) {
+            console.error(e);
+        }
     },
 
     getInitialState() {
@@ -65,8 +71,6 @@ const CachedImage = React.createClass({
     },
 
     componentWillMount() {
-        const rand = Math.floor(Math.random() * 1000000);
-        this.refName = 'cachedImage'+rand;
         this._isMounted = true;
         NetInfo.isConnected.addEventListener('change', this.handleConnectivityChange);
         // initial
