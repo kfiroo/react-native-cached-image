@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const CACHED_IMAGE_REF = 'cachedImage' + (Math.floor(Math.random() * 1000000));
+const CACHED_IMAGE_REF = 'cachedImage';
 
 const CachedImage = React.createClass({
     propTypes: {
