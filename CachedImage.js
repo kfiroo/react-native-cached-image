@@ -26,6 +26,8 @@ const styles = StyleSheet.create({
     }
 });
 
+const CACHED_IMAGE_REF = 'cachedImage';
+
 const CachedImage = React.createClass({
     propTypes: {
         renderImage: React.PropTypes.func.isRequired,
@@ -38,10 +40,18 @@ const CachedImage = React.createClass({
 
     getDefaultProps() {
         return {
-            renderImage: props => (<Image {...props}/>),
+            renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false
         };
+    },
+
+    setNativeProps(nativeProps) {
+        try {
+            this.refs[CACHED_IMAGE_REF].setNativeProps(nativeProps);
+        } catch (e) {
+            console.error(e);
+        }
     },
 
     getInitialState() {
