@@ -94,7 +94,11 @@ function downloadImage(fromUrl, toFile) {
             };
             RNFS.downloadFile(downloadOptions).promise
                 .then(res => {
-                    resolve(toFile);
+                    if (Math.floor(res.statusCode / 100) == 2) {
+                      resolve(toFile);
+                    } else {
+                      return Promise.reject('Failed to successfully download image')
+                    }
                 })
                 .catch(err => {
                     return deleteFile(toFile)
