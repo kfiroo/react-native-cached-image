@@ -26,6 +26,8 @@ const styles = StyleSheet.create({
     }
 });
 
+const CACHED_IMAGE_REF = 'cachedImage';
+
 const CachedImage = React.createClass({
     propTypes: {
         renderImage: React.PropTypes.func.isRequired,
@@ -38,10 +40,18 @@ const CachedImage = React.createClass({
 
     getDefaultProps() {
         return {
-            renderImage: props => (<Image {...props}/>),
+            renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false
         };
+    },
+
+    setNativeProps(nativeProps) {
+        try {
+            this.refs[CACHED_IMAGE_REF].setNativeProps(nativeProps);
+        } catch (e) {
+            console.error(e);
+        }
     },
 
     getInitialState() {
@@ -94,7 +104,7 @@ const CachedImage = React.createClass({
     processSource(source) {
         const url = _.get(source, ['uri'], null);
         if (ImageCacheProvider.isCacheable(url)) {
-            const options = _.pick(this.props, ['useQueryParamsInCacheKey']);
+            const options = _.pick(this.props, ['useQueryParamsInCacheKey', 'cacheGroup']);
             // try to get the image path from cache
             ImageCacheProvider.getCachedImagePath(url, options)
                 // try to put the image in cache if
