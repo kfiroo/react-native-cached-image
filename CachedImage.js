@@ -137,12 +137,15 @@ const CachedImage = React.createClass({
 
     renderLoader() {
         const props = _.omit(this.props.activityIndicatorProps, ['style']);
+        const imageProps = _.omit(this.props, ['source', 'activityIndicatorProps', 'style']);
         const style = [this.props.style, this.props.activityIndicatorProps.style || styles.loader];
+        const imageStyle = this.props.style || styles.image;
         return (
-            <ActivityIndicator
-                {...props}
-                style={style}
-            />
+            <Image {...imageProps} style={imageStyle}>
+                <ActivityIndicator
+                    {...props}
+                    style={style}/>
+            </image>
         );
     }
 });
