@@ -145,7 +145,7 @@ const CachedImage = React.createClass({
                 <ActivityIndicator
                     {...props}
                     style={style}/>
-            </image>
+			</Image>
         );
     }
 });
