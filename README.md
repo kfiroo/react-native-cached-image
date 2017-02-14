@@ -51,7 +51,7 @@ or remove some outdated images from the cache to free some space up if needed.
 
 ```javascript
 // CachedImage exposes ImageCacheProvider
-const ImageCacheProvider = CachedImage;
+const ImageCacheProvider = CachedImage.ImageCacheProvider;
 
 // will add the urls to the cache so when CachedImage will try to load them 
 // the result will be and instant load from cache
