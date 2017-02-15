@@ -22,9 +22,18 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent'
     },
     loader: {
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+    },
+    loaderPlaceholder: {
+        backgroundColor: 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center'
     }
 });
+
+function getImageProps(props) {
+    return _.omit(props, ['source', 'defaultSource', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage']);
+}
 
 const CACHED_IMAGE_REF = 'cachedImage';
 
@@ -133,11 +142,11 @@ const CachedImage = React.createClass({
         if (this.state.isCacheable && !this.state.cachedImagePath) {
             return this.renderLoader();
         }
-        const props = _.omit(this.props, ['source', 'activityIndicatorProps', 'style']);
+        const props = getImageProps(this.props);
         const style = this.props.style || styles.image;
         const source = this.state.cachedImagePath ? {
-            uri: 'file://' + this.state.cachedImagePath
-        } : this.props.source;
+                uri: 'file://' + this.state.cachedImagePath
+            } : this.props.source;
         return this.props.renderImage({
             ...props,
             style,
@@ -146,13 +155,33 @@ const CachedImage = React.createClass({
     },
 
     renderLoader() {
-        const props = _.omit(this.props.activityIndicatorProps, ['style']);
-        const style = [this.props.style, this.props.activityIndicatorProps.style || styles.loader];
+        const imageProps = getImageProps(this.props);
+        const imageStyle = [this.props.style, styles.loaderPlaceholder];
+
+        const activityIndicatorProps = _.omit(this.props.activityIndicatorProps, ['style']);
+        const activityIndicatorStyle = this.props.activityIndicatorProps.style || styles.loader;
+
+        const source = this.props.defaultSource;
+
+        // if the imageStyle has borderRadius it will break the loading image view on android
+        // so we only show the ActivityIndicator
+        if (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius) {
+            return (
+                <ActivityIndicator
+                    {...activityIndicatorProps}
+                    style={[imageStyle, activityIndicatorStyle]}/>
+            );
+        }
+        // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
         return (
-            <ActivityIndicator
-                {...props}
-                style={style}
-            />
+            <Image
+                {...imageProps}
+                source={source}
+                style={imageStyle}>
+                <ActivityIndicator
+                    {...activityIndicatorProps}
+                    style={activityIndicatorStyle}/>
+            </Image>
         );
     }
 });
