@@ -22,7 +22,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent'
     },
     loader: {
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+    },
+    loaderPlaceholder: {
+        backgroundColor: 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
     }
 });
 
@@ -147,16 +153,26 @@ const CachedImage = React.createClass({
 
     renderLoader() {
         const props = _.omit(this.props.activityIndicatorProps, ['style']);
-        const imageProps = _.omit(this.props, ['source', 'defaultSource' 'activityIndicatorProps', 'style']);
-        const style = [this.props.style, this.props.activityIndicatorProps.style || styles.loader];
-        const imageStyle = this.props.style || styles.image;
-		const source = this.props.defaultSource;
+        const imageProps = _.omit(this.props, ['source', 'defaultSource', 'activityIndicatorProps', 'style']);
+        const style = this.props.activityIndicatorProps.style || styles.loader;
+        const imageStyle = [this.props.style, styles.loaderPlaceholder];
+        const source = this.props.defaultSource;
+
+        if(!this.props.defaultSource || Platform.OS === 'android' &&
+            this.props.style && flattenStyle(this.props.style).borderRadius){
+            return (
+                <ActivityIndicator
+                    {...props}
+                    style={[this.props.style, style]}/>
+            );
+        }
+
         return (
             <Image {...imageProps} source={ source } style={imageStyle}>
                 <ActivityIndicator
                     {...props}
                     style={style}/>
-			</Image>
+            </Image>
         );
     }
 });
