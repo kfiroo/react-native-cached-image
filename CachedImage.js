@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const React = require('react');
 const ReactNative = require('react-native');
-
+const flattenStyle = ReactNative.StyleSheet.flatten;
 const ImageCacheProvider = require('./ImageCacheProvider');
 
 const {
@@ -12,6 +12,7 @@ const {
     NetInfo,
     Platform
 } = ReactNative;
+
 
 const {
     StyleSheet
