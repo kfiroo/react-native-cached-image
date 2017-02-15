@@ -32,7 +32,7 @@ This package exposes 2 modules:
 ### CachedImage
 `CachedImage` is just like the native `Image` component, you can provide it with `defaultSource`, `style`, etc.  
 When providing `source={require('/path/to/local/image')}` or `source={{uri: '/path/to/local/image'}}` to it the image will be loaded from local source and will not be cached.  
-When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` the image will be downloaded and cached on the device to subsequent reuests to the same url will always result in an instant load from the local image.  
+When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` the image will be downloaded and cached on the device to subsequent requests to the same url will always result in an instant load from the local image.  
 ```jsx
 <CachedImage
     source={{
@@ -42,8 +42,9 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
 />
 ```
 ##### Props
-* `activityIndicatorProps` - props for the `ActivityIndicator` that is shown while the image is downloaded. 
-* `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)** 
+* `activityIndicatorProps` - props for the `ActivityIndicator` that is shown while the image is downloaded.
+* `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)**
+* `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
 
 ### ImageCacheProvider
 `ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
@@ -55,14 +56,14 @@ const CachedImage = require('react-native-cached-image');
 // CachedImage exposes ImageCacheProvider
 const ImageCacheProvider = CachedImage.ImageCacheProvider;
 
-// will add the urls to the cache so when CachedImage will try to load them 
+// will add the urls to the cache so when CachedImage will try to load them
 // the result will be and instant load from cache
 ImageCacheProvider.cacheMultipleImages([
     'https://example.com/path/to/remote/image.jpg',
     'https://example.com/path/to/remote/other-image.png'    
 ]);
 
-// clear old urls from the cache, useful when updating your app version and 
+// clear old urls from the cache, useful when updating your app version and
 // old version of the images are no longer relevant, for example
 ImageCacheProvider.deleteMultipleCachedImages([
     'https://example.com/path/to/remote/image.jpg',
@@ -100,6 +101,7 @@ Cache a list of urls, if any of the urls is already cached will not try to downl
 Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing
 
 #### Dependencies
+- [lodash](https://github.com/lodash/lodash) for props handling
 - [url-parse](https://github.com/unshiftio/url-parse) for url handling
 - [crypto-js](https://github.com/brix/crypto-js) for hashing
 - [react-native-fs](https://github.com/johanneslumpe/react-native-fs) for file system access
