@@ -36,11 +36,18 @@ function getQueryForCacheKey(url, useQueryParamsInCacheKey) {
 
 function generateCacheKey(url, options) {
     const parsedUrl = new URL(url, null, true);
-    const parts = parsedUrl.pathname.split('.');
+
+    const pathParts = parsedUrl.pathname.split('/');
+
+    // last path part is the file name
+    const fileName = pathParts.pop();
+    const filePath = pathParts.join('/');
+
+    const parts = fileName.split('.');
     // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
     const type = parts.length > 1 ? parts.pop() : 'jpg';
-    const pathname = parts.join('.');
-    const cacheable = pathname + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
+
+    const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
     return SHA1(cacheable) + '.' + type;
 }
 
