@@ -145,7 +145,7 @@ const CachedImage = React.createClass({
         }
         const props = getImageProps(this.props);
         const style = this.props.style || styles.image;
-        const source = this.state.cachedImagePath ? {
+        const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
                 uri: 'file://' + this.state.cachedImagePath
             } : this.props.source;
         return this.props.renderImage({
