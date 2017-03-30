@@ -45,6 +45,7 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
 * `activityIndicatorProps` - props for the `ActivityIndicator` that is shown while the image is downloaded.
 * `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)**
 * `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
+* `resolveHeaders` - _function_ when provided, the returned object will be used as the headers object when sending the request to download the image. **(default: () => Promise.resolve({}))**
 
 ### ImageCacheProvider
 `ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
