@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage']);
+    return _.omit(props, ['source', 'defaultSource', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
@@ -45,7 +45,8 @@ const CachedImage = React.createClass({
         useQueryParamsInCacheKey: React.PropTypes.oneOfType([
             React.PropTypes.bool,
             React.PropTypes.array
-        ]).isRequired
+        ]).isRequired,
+        resolveHeaders: React.PropTypes.func
     },
 
     getDefaultProps() {
@@ -118,7 +119,7 @@ const CachedImage = React.createClass({
             // try to get the image path from cache
             ImageCacheProvider.getCachedImagePath(url, options)
                 // try to put the image in cache if
-                .catch(() => ImageCacheProvider.cacheImage(url, options))
+                .catch(() => ImageCacheProvider.cacheImage(url, options, this.props.resolveHeaders))
                 .then(cachedImagePath => {
                     this.safeSetState({
                         cachedImagePath
