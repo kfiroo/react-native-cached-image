@@ -121,13 +121,6 @@ function downloadImage(fromUrl, toFile, headers) {
     return activeDownloads[toFile];
 }
 
-function processResolveHeaders(resolveHeaders) {
-  if (_.isFunction(resolveHeaders)) {
-    return resolveHeaders();
-  }
-  return Promise.resolve({}); // return solved promise if no function given
-}
-
 function createPrefetcer(list) {
     const urls = _.clone(list);
     return {
@@ -186,7 +179,7 @@ function getCachedImagePath(url, options = defaultOptions) {
 function cacheImage(url, options = defaultOptions, resolveHeaders) {
     const filePath = getCachedImageFilePath(url, options);
     return ensurePath(filePath)
-        .then(() => processResolveHeaders(resolveHeaders))
+        .then(() => resolveHeaders())
         .then(headers => downloadImage(url, filePath, headers));
 }
 
