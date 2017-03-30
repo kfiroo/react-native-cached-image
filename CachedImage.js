@@ -54,7 +54,7 @@ const CachedImage = React.createClass({
             renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false,
-            resolveHeaders: Promise.resolve({})
+            resolveHeaders: () => Promise.resolve({})
         };
     },
 
