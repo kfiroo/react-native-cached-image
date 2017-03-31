@@ -10,6 +10,8 @@ const {
 const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
+const SUB_DIR_PATH = 'subDirPath';
+
 const defaultOptions = {
     useQueryParamsInCacheKey: false
 };
@@ -63,8 +65,12 @@ function getCachedImageFilePath(url, options) {
     const cacheKey = generateCacheKey(url, options);
     const cachePath = getCachePath(url, options);
 
-    const dirPath = DocumentDirectoryPath + '/' + cachePath;
+    const dirPath = getBasDirPath() + '/' + cachePath;
     return dirPath + '/' + cacheKey;
+}
+
+function getBasDirPath(){
+  return DocumentDirectoryPath + '/' + SUB_DIR_PATH;
 }
 
 function deleteFile(filePath) {
@@ -205,7 +211,18 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
 }
 
 function clearCache() {
+    deleteFile(getBasDirPath());
+    ensurePath(getBasDirPath());
+}
 
+function getCacheInfo(){
+    return RNFS.stat(getBasDirPath())
+        .then((res) => {
+            if (res && res.size) {
+                return res.size;
+            }
+            return null;
+        });
 }
 
 module.exports = {
@@ -215,5 +232,6 @@ module.exports = {
     deleteCachedImage,
     cacheMultipleImages,
     deleteMultipleCachedImages,
-    clearCache
+    clearCache,
+    getCacheInfo
 };
