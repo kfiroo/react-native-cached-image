@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/react-native-cached-image.svg)](https://badge.fury.io/js/react-native-cached-image)
+
 # react-native-cached-image
 CachedImage component for react-native
 
