@@ -110,4 +110,4 @@ Deletes all images from cache that were cached using the given urls, if file doe
 - [lodash](https://github.com/lodash/lodash) for props handling
 - [url-parse](https://github.com/unshiftio/url-parse) for url handling
 - [crypto-js](https://github.com/brix/crypto-js) for hashing
-- [react-native-fs](https://github.com/johanneslumpe/react-native-fs) for file system access
+- [react-native-fetch-blob](https://github.com/wkh237/react-native-fetch-blob) for downloading and saving images
