@@ -1,14 +1,22 @@
 'use strict';
 
 const _ = require('lodash');
-const RNFS = require('react-native-fs');
+
+const RNFatchBlob = require('react-native-fetch-blob').default;
 
 const {
-    DocumentDirectoryPath
-} = RNFS;
+    fs
+} = RNFatchBlob;
+
+const {
+    DocumentDir: DocumentDirectoryPath
+} = fs.dirs;
 
 const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
+
+const defaultHeaders = {};
+const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
     useQueryParamsInCacheKey: false
@@ -68,8 +76,9 @@ function getCachedImageFilePath(url, options) {
 }
 
 function deleteFile(filePath) {
-    return RNFS.exists(filePath)
-        .then(res => res && RNFS.unlink(filePath))
+    return fs.stat(filePath)
+        .then(res => res && res.type === 'file')
+        .then(exists => exists && fs.unlink(filePath))
         .catch((err) => {
             // swallow error to always resolve
         });
@@ -78,7 +87,10 @@ function deleteFile(filePath) {
 function ensurePath(filePath) {
     const parts = filePath.split('/');
     const dirPath = _.initial(parts).join('/');
-    return RNFS.mkdir(dirPath, {NSURLIsExcludedFromBackupKey: true});
+    return fs.isDir(dirPath)
+        .then(exists =>
+            !exists && fs.mkdir(dirPath)
+        );
 }
 
 /**
@@ -86,32 +98,24 @@ function ensurePath(filePath) {
  * is complete and the file is saved.
  * if the download fails, or was stopped the partial file is deleted, and the
  * promise is rejected
- * @param fromUrl
- * @param toFile
+ * @param fromUrl   String source url
+ * @param toFile    String destination path
+ * @param headers   Object headers to use when downloading the file
  * @returns {Promise}
  */
-function downloadImage(fromUrl, toFile, headers) {
+function downloadImage(fromUrl, toFile, headers = {}) {
     // use toFile as the key as is was created using the cacheKey
     if (!_.has(activeDownloads, toFile)) {
         // create an active download for this file
         activeDownloads[toFile] = new Promise((resolve, reject) => {
-            const downloadOptions = {
-                fromUrl,
-                toFile,
-                headers
-            };
-            RNFS.downloadFile(downloadOptions).promise
-                .then(res => {
-                    if (Math.floor(res.statusCode / 100) == 2) {
-                      resolve(toFile);
-                    } else {
-                      return Promise.reject('Failed to successfully download image')
-                    }
-                })
-                .catch(err => {
-                    return deleteFile(toFile)
+            RNFatchBlob
+                .config({path: toFile})
+                .fetch('GET', fromUrl, headers)
+                .then(res => resolve(toFile))
+                .catch(err =>
+                    deleteFile(toFile)
                         .then(() => reject(err))
-                })
+                )
                 .finally(() => {
                     // cleanup
                     delete activeDownloads[toFile];
@@ -156,9 +160,9 @@ function isCacheable(url) {
 
 function getCachedImagePath(url, options = defaultOptions) {
     const filePath = getCachedImageFilePath(url, options);
-    return RNFS.stat(filePath)
+    return fs.stat(filePath)
         .then(res => {
-            if (!res.isFile()) {
+            if (res.type !== 'file') {
                 // reject the promise if res is not a file
                 throw new Error('Failed to get image from cache');
             }
@@ -176,7 +180,7 @@ function getCachedImagePath(url, options = defaultOptions) {
         })
 }
 
-function cacheImage(url, options = defaultOptions, resolveHeaders) {
+function cacheImage(url, options = defaultOptions, resolveHeaders = defaultResolveHeaders) {
     const filePath = getCachedImageFilePath(url, options);
     return ensurePath(filePath)
         .then(() => resolveHeaders())

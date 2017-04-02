@@ -11,14 +11,17 @@ or
 
     yarn add react-native-cached-image
 
-#### react-native-fs
-_\* As noted by [@Froelund](https://github.com/Froelund) [here](https://github.com/kfiroo/react-native-cached-image/issues/15) `react-native-fs` is not maintained anymore, but its author points to `react-native-fetch-blob` as an alternative [here](https://github.com/johanneslumpe/react-native-fs#this-project-is-not-actively-maintained-consider-using-react-native-fetch-blob-as-a-replacement). I will work on replacing the modules soon_
+#### react-native-fs --> react-native-fetch-blob
+_\* As noted by [@Froelund](https://github.com/Froelund) [here](https://github.com/kfiroo/react-native-cached-image/issues/15) `react-native-fs` is not maintained anymore, but its author points to `react-native-fetch-blob` as an alternative [here](https://github.com/johanneslumpe/react-native-fs#this-project-is-not-actively-maintained-consider-using-react-native-fetch-blob-as-a-replacement).
 
-We use `react-native-fs` to handle file system access in this package and it requires an extra step during the installation.  
+We use [`react-native-fetch-blob`](https://github.com/wkh237/react-native-fetch-blob#installation) to handle file system access in this package and it requires an extra step during the installation.  
 _You should only have to do this once._
 
-    react-native link react-native-fs
+    react-native link react-native-fetch-blob
+    
+Or, if you want to add Android permissions to AndroidManifest.xml automatically, use this one:
 
+    RNFB_ANDROID_PERMISSIONS=true react-native link react-native-fetch-blob
 
 ### Network Status - Android only
 Add the following line to your android/app/src/AndroidManifest.xml
