@@ -1,7 +1,7 @@
 # react-native-cached-image
 CachedImage component for react-native
 
-This package is greatly inspired by [jayesbe](https://github.com/jayesbe)'s amazing [react-native-cacheable-image](https://github.com/jayesbe/react-native-cacheable-image) but adds some functionality that we were missing when trying to handle caching images in our react-native app.
+This package is greatly inspired by [@jayesbe](https://github.com/jayesbe)'s amazing [react-native-cacheable-image](https://github.com/jayesbe/react-native-cacheable-image) but adds some functionality that we were missing when trying to handle caching images in our react-native app.
 
 ## Installation
 
@@ -12,6 +12,8 @@ or
     yarn add react-native-cached-image
 
 #### react-native-fs
+_\* As noted by [@Froelund](https://github.com/Froelund) [here](https://github.com/kfiroo/react-native-cached-image/issues/15) `react-native-fs` is not maintained anymore, but its author points to `react-native-fetch-blob` as an alternative [here](https://github.com/johanneslumpe/react-native-fs#this-project-is-not-actively-maintained-consider-using-react-native-fetch-blob-as-a-replacement). I will work on replacing the modules soon_
+
 We use `react-native-fs` to handle file system access in this package and it requires an extra step during the installation.  
 _You should only have to do this once._
 
@@ -45,6 +47,7 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
 * `activityIndicatorProps` - props for the `ActivityIndicator` that is shown while the image is downloaded.
 * `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)**
 * `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
+* `resolveHeaders` - _function_ when provided, the returned object will be used as the headers object when sending the request to download the image. **(default: () => Promise.resolve({}))**
 
 ### ImageCacheProvider
 `ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
