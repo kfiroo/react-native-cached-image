@@ -63,8 +63,9 @@ function getCachePath(url, options) {
     if (options.cacheGroup) {
         return options.cacheGroup;
     }
-    const parsedUrl = new URL(url);
-    return parsedUrl.host;
+    const { host } = new URL(url);
+    const sanitizedHost = host.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    return sanitizedHost;
 }
 
 function getCachedImageFilePath(url, options) {
