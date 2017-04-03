@@ -18,6 +18,8 @@ const URL = require('url-parse');
 const defaultHeaders = {};
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
+const SUB_DIR_PATH = 'subDirPath';
+
 const defaultOptions = {
     useQueryParamsInCacheKey: false
 };
@@ -71,7 +73,7 @@ function getCachedImageFilePath(url, options) {
     const cacheKey = generateCacheKey(url, options);
     const cachePath = getCachePath(url, options);
 
-    const dirPath = DocumentDirectoryPath + '/' + cachePath;
+    const dirPath = getBaseDirPath() + '/' + cachePath;
     return dirPath + '/' + cacheKey;
 }
 
@@ -82,6 +84,10 @@ function deleteFile(filePath) {
         .catch((err) => {
             // swallow error to always resolve
         });
+}
+
+function getBaseDirPath(){
+    return DocumentDirectoryPath + '/' + SUB_DIR_PATH;
 }
 
 function ensurePath(filePath) {
@@ -209,7 +215,8 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
 }
 
 function clearCache() {
-
+    deleteFile(getBaseDirPath());
+    ensurePath(getBaseDirPath());
 }
 
 module.exports = {
