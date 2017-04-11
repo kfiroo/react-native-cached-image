@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const localImage1 = require('./image1.jpg');
+const localImage1 = require('./loading.jpg');
 
 const image1 = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Big_Bog_State_Recreation_Area.jpg';
 const image2 = 'https://s-media-cache-ak0.pinimg.com/originals/62/a7/6f/62a76fde4009c4e3047b4b5e17899a8d.jpg';

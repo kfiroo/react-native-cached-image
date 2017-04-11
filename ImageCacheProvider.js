@@ -91,7 +91,13 @@ function ensurePath(dirPath) {
     return fs.isDir(dirPath)
         .then(exists =>
             !exists && fs.mkdir(dirPath)
-        );
+        )
+        .catch(err => {
+            // swallow acceptable errors
+            if (err.message !== 'mkdir failed, folder already exists') {
+                throw err;
+            }
+        });
 }
 
 /**
@@ -168,7 +174,6 @@ function collectFilesInfo(basePath) {
                 });
         })
         .catch(err => {
-            console.warn(err);
             return [];
         });
 }
