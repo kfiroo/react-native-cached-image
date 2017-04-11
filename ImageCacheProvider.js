@@ -5,7 +5,7 @@ const _ = require('lodash');
 const RNFatchBlob = require('react-native-fetch-blob').default;
 
 const {
-    fs,
+    fs
 } = RNFatchBlob;
 
 const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
