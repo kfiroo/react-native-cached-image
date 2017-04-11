@@ -5,7 +5,7 @@ const _ = require('lodash');
 const RNFatchBlob = require('react-native-fetch-blob').default;
 
 const {
-    fs
+    fs,
 } = RNFatchBlob;
 
 const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
@@ -275,6 +275,21 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
 }
 
 /**
+* Seed the cache of a specified url with a local image
+* Handy if you have a local copy of a remote image, e.g. you just uploaded it.
+* @param local
+* @param url
+* @param options
+* @returns {Promise}
+*/
+function seedCache(local, url, options = defaultOptions) {
+  const filePath = getCachedImageFilePath(url, options);
+  const dirPath = getDirPath(filePath);
+  return ensurePath(dirPath)
+    .then(() => fs.cp(local, filePath))
+}
+
+/**
  * Clear the entire cache.
  * @returns {Promise}
  */
@@ -311,5 +326,6 @@ module.exports = {
     cacheMultipleImages,
     deleteMultipleCachedImages,
     clearCache,
+    seedCache,
     getCacheInfo
 };
