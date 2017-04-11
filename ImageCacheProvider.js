@@ -276,7 +276,7 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
 
 /**
 * Seed the cache of a specified url with a local image
-* Handy if you have a local copy of a remote image, e.g. you just uploaded it.
+* Handy if you have a local copy of a remote image, e.g. you just uploaded local to url.
 * @param local
 * @param url
 * @param options
