@@ -8,17 +8,13 @@ const {
     fs
 } = RNFatchBlob;
 
-const {
-    DocumentDir: DocumentDirectoryPath
-} = fs.dirs;
+const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
 
 const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
 const defaultHeaders = {};
 const defaultResolveHeaders = _.constant(defaultHeaders);
-
-const SUB_DIR_PATH = 'subDirPath';
 
 const defaultOptions = {
     useQueryParamsInCacheKey: false
@@ -65,17 +61,17 @@ function getCachePath(url, options) {
     if (options.cacheGroup) {
         return options.cacheGroup;
     }
-    const { host } = new URL(url);
-    const sanitizedHost = host.replace(/[^a-z0-9]/gi, '').toLowerCase();
-    return sanitizedHost;
+    const {
+        host
+    } = new URL(url);
+    return host.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 
 function getCachedImageFilePath(url, options) {
-    const cacheKey = generateCacheKey(url, options);
     const cachePath = getCachePath(url, options);
+    const cacheKey = generateCacheKey(url, options);
 
-    const dirPath = getBaseDirPath() + '/' + cachePath;
-    return dirPath + '/' + cacheKey;
+    return `${baseCacheDir}/${cachePath}/${cacheKey}`;
 }
 
 function deleteFile(filePath) {
@@ -87,13 +83,11 @@ function deleteFile(filePath) {
         });
 }
 
-function getBaseDirPath(){
-    return DocumentDirectoryPath + '/' + SUB_DIR_PATH;
+function getDirPath(filePath) {
+    return _.initial(filePath.split('/')).join('/');
 }
 
-function ensurePath(filePath) {
-    const parts = filePath.split('/');
-    const dirPath = _.initial(parts).join('/');
+function ensurePath(dirPath) {
     return fs.isDir(dirPath)
         .then(exists =>
             !exists && fs.mkdir(dirPath)
@@ -159,12 +153,44 @@ function runPrefetchTask(prefetcher, options) {
     return runPrefetchTask(prefetcher, options);
 }
 
+function collectFilesInfo(basePath) {
+    return fs.stat(basePath)
+        .then((info) => {
+            if (info.type === 'file') {
+                return [info];
+            }
+            return fs.ls(basePath)
+                .then(files => {
+                    const promises = _.map(files, file => {
+                        return collectFilesInfo(`${basePath}/${file}`);
+                    });
+                    return Promise.all(promises);
+                });
+        })
+        .catch(err => {
+            console.warn(err);
+            return [];
+        });
+}
+
 // API
 
+/**
+ * Check whether a url is cacheable.
+ * Takes an image source and if it's a valid url return `true`
+ * @param url
+ * @returns {boolean}
+ */
 function isCacheable(url) {
     return _.isString(url) && (_.startsWith(url, 'http://') || _.startsWith(url, 'https://'));
 }
 
+/**
+ * Get the local path corresponding to the given url and options.
+ * @param url
+ * @param options
+ * @returns {Promise.<String>}
+ */
 function getCachedImagePath(url, options = defaultOptions) {
     const filePath = getCachedImageFilePath(url, options);
     return fs.stat(filePath)
@@ -187,18 +213,39 @@ function getCachedImagePath(url, options = defaultOptions) {
         })
 }
 
+/**
+ * Download the image to the cache and return the local file path.
+ * @param url
+ * @param options
+ * @param resolveHeaders
+ * @returns {Promise.<String>}
+ */
 function cacheImage(url, options = defaultOptions, resolveHeaders = defaultResolveHeaders) {
     const filePath = getCachedImageFilePath(url, options);
-    return ensurePath(filePath)
+    const dirPath = getDirPath(filePath);
+    return ensurePath(dirPath)
         .then(() => resolveHeaders())
         .then(headers => downloadImage(url, filePath, headers));
 }
 
+/**
+ * Delete the cached image corresponding to the given url and options.
+ * @param url
+ * @param options
+ * @returns {Promise}
+ */
 function deleteCachedImage(url, options = defaultOptions) {
     const filePath = getCachedImageFilePath(url, options);
     return deleteFile(filePath);
 }
 
+/**
+ * Cache an array of urls.
+ * Usually used to prefetch images.
+ * @param urls
+ * @param options
+ * @returns {Promise}
+ */
 function cacheMultipleImages(urls, options = defaultOptions) {
     const prefetcher = createPrefetcer(urls);
     const numberOfWorkers = urls.length;
@@ -208,6 +255,13 @@ function cacheMultipleImages(urls, options = defaultOptions) {
     return Promise.all(promises);
 }
 
+/**
+ * Delete an array of cached images by their urls.
+ * Usually used to clear the prefetched images.
+ * @param urls
+ * @param options
+ * @returns {Promise}
+ */
 function deleteMultipleCachedImages(urls, options = defaultOptions) {
     return _.reduce(urls, (p, url) =>
             p.then(() => deleteCachedImage(url, options)),
@@ -215,9 +269,33 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
     );
 }
 
+/**
+ * Clear the entire cache.
+ * @returns {Promise}
+ */
 function clearCache() {
-    deleteFile(getBaseDirPath());
-    ensurePath(getBaseDirPath());
+    return fs.unlink(baseCacheDir)
+        .catch(() => {
+            // swallow exceptions if path doesn't exist
+        })
+        .then(() => ensurePath(baseCacheDir));
+}
+
+/**
+ * Return info about the cache, list of files and the total size of the cache.
+ * @returns {Promise.<{size}>}
+ */
+function getCacheInfo() {
+    return ensurePath(baseCacheDir)
+        .then(() => collectFilesInfo(baseCacheDir))
+        .then(cache => {
+            const files = _.flattenDeep(cache);
+            const size = _.sumBy(files, 'size');
+            return {
+                files,
+                size
+            };
+        });
 }
 
 module.exports = {
@@ -227,5 +305,6 @@ module.exports = {
     deleteCachedImage,
     cacheMultipleImages,
     deleteMultipleCachedImages,
-    clearCache
+    clearCache,
+    getCacheInfo
 };

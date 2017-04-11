@@ -3,6 +3,8 @@
 const React = require('react');
 const ReactNative = require('react-native');
 
+const _ = require('lodash');
+
 const {
     View,
     Button,
@@ -39,8 +41,21 @@ const styles = StyleSheet.create({
     }
 });
 
+const localImage1 = require('./image1.jpg');
+
 const image1 = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Big_Bog_State_Recreation_Area.jpg';
 const image2 = 'https://s-media-cache-ak0.pinimg.com/originals/62/a7/6f/62a76fde4009c4e3047b4b5e17899a8d.jpg';
+
+function formatBytes(bytes,decimals) {
+    if(bytes === 0) {
+        return '0 B';
+    }
+    const k = 1000;
+    const dm = decimals + 1 || 3;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
 
 const CachedImageExample = React.createClass({
 
@@ -60,14 +75,18 @@ const CachedImageExample = React.createClass({
     loadMore() {
         this.setState({
             showNextImage: true
-        })
+        });
     },
 
     clearCache() {
-        ImageCacheProvider.deleteMultipleCachedImages([
-            image1,
-            image2
-        ]);
+        ImageCacheProvider.clearCache();
+    },
+
+    getCacheInfo() {
+        ImageCacheProvider.getCacheInfo()
+            .then(({size}) => {
+                ReactNative.Alert.alert('Cache Info', `size: ${formatBytes(size)}`);
+            });
     },
 
     render() {
@@ -77,18 +96,24 @@ const CachedImageExample = React.createClass({
                     <Button
                         onPress={this.loadMore}
                         title="Load Next Image"
-                        color="#841584"
+                        color="#b348ff"
                     />
                     <Button
                         onPress={this.clearCache}
                         title="Clear Cache"
-                        color="#0C42FD"
+                        color="#6f97e5"
+                    />
+                    <Button
+                        onPress={this.getCacheInfo}
+                        title="Cache Info"
+                        color="#2ce7cc"
                     />
                 </View>
                 <CachedImage
                     source={{
                         uri: image1
                     }}
+                    defaultSource={localImage1}
                     style={styles.image}
                 />
                 {
