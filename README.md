@@ -99,6 +99,10 @@ Will download the file from the given url and save it to the device.
 Returns a Promise that is resolved with the path to the underlying cached image file path if download was successful.  
 Promise is rejected if the download or file write failed.
 
+#### `ImageCacheProvider.seedCache(local: string, url: string, options: CacheOptions): Promise`
+Seed the cache for a given url with a local image.
+Useful to avoid having to download an image when you have a local copy.
+
 #### `ImageCacheProvider.deleteCachedImage(url: string, options: CacheOptions): Promise`
 Deletes the underlying cached image for a given url.
 
