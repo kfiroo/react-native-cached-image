@@ -93,10 +93,11 @@ function ensurePath(dirPath) {
             !exists && fs.mkdir(dirPath)
         )
         .catch(err => {
-            // swallow acceptable errors
-            if (err.message !== 'mkdir failed, folder already exists') {
-                throw err;
+            // swallow folder already exists errors
+            if (err.message.includes('folder already exists')) {
+                return;
             }
+            throw err;
         });
 }
 
