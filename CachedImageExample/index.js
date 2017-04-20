@@ -45,26 +45,11 @@ const styles = StyleSheet.create({
 const loading = require('./loading.jpg');
 
 const images = [
-    "https://pixabay.com/get/e834b30d2ff11c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/ec35b40e21f51c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/e830b50a28f5013ed95c4518b7494691ea71e5d604b0154894f9c97ca1eebd_640.jpg",
-    "https://pixabay.com/get/e832b50f2ff71c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/ed36b60e35fd0723cd0b4005e1454091e06ae3d110b0184990f6c271_640.jpg",
-    "https://pixabay.com/get/ec3db40f20f21c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/e034b50a20f11c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/e13cb9082df21c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/eb34b00e2de90825d0471400e64b4f90e474ffd41db810489df5c77aaf_640.jpg",
-    "https://pixabay.com/get/eb34b3072af11c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/ea36b60a2bfd1c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/ea3cb70d20fd1c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/e835b30621f01c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/eb37b10a2ce90825d0471400e64b4f90e474ffd41db810489df5c77aaf_640.jpg",
-    "https://pixabay.com/get/ed34b20e2ef61c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/ed30b10e2cfd1c2ad65a5854e34c419fe570e1c818b518409cf8c47fa4e5_640.jpg",
-    "https://pixabay.com/get/eb34b80a29f4063ed95c4518b7494691ea71e5d604b0154894f9c97ca1eebd_640.jpg",
-    "https://pixabay.com/get/e834b80b2bf0023ed95c4518b7494691ea71e5d604b0154894f9c97ca1eebd_640.jpg",
-    "https://pixabay.com/get/e836b5092dfd013ed95c4518b7494691ea71e5d604b0154894f9c97ca1eebd_640.jpg",
-    "https://pixabay.com/get/eb37b10c2bf5053ed95c4518b7494691ea71e5d604b0154894f9c97ca1eebd_640.jpg"
+    'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/cheeseburger-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/friendsgiving-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/dogs-play-date-full.jpg'
 ];
 
 function formatBytes(bytes, decimals) {
@@ -86,6 +71,16 @@ const CachedImageExample = React.createClass({
             showNextImage: false,
             dataSource: ds.cloneWithRows(images)
         };
+    },
+
+    componentWillMount() {
+        ImageCacheProvider.cacheMultipleImages(images)
+            .then(() => {
+                console.log('cacheMultipleImages Done');
+            })
+            .catch(err => {
+                console.log('cacheMultipleImages caught an error: ', err);
+            });
     },
 
     clearCache() {
