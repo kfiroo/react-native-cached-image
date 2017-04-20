@@ -180,11 +180,11 @@ const CachedImage = React.createClass({
             ...imageProps,
             style: imageStyle,
             source,
-            children: [(
+            children: (
                 <ActivityIndicator
                     {...activityIndicatorProps}
                     style={activityIndicatorStyle}/>
-            )]
+            )
         });
     }
 });
