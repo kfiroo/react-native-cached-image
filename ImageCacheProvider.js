@@ -119,11 +119,16 @@ function downloadImage(fromUrl, toFile, headers = {}) {
             RNFatchBlob
                 .config({path: toFile})
                 .fetch('GET', fromUrl, headers)
-                .then(res => resolve(toFile))
-                .catch(err =>
-                    deleteFile(toFile)
-                        .then(() => reject(err))
-                )
+                .then(res => {
+                    if (Math.floor(res.respInfo.status / 100) !== 2) {
+                        throw new Error('Failed to successfully download image');
+                    }
+                    resolve(toFile);
+                })
+                .catch(err => {
+                    return deleteFile(toFile)
+                        .then(() => reject(err));
+                })
                 .finally(() => {
                     // cleanup
                     delete activeDownloads[toFile];
@@ -153,6 +158,8 @@ function runPrefetchTask(prefetcher, options) {
         return getCachedImagePath(url, options)
         // if not found download
             .catch(() => cacheImage(url, options))
+            // allow prefetch task to fail without terminating other prefetch tasks
+            .catch(_.noop)
             // then run next task
             .then(() => runPrefetchTask(prefetcher, options));
     }
