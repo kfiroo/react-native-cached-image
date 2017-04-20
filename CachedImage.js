@@ -128,7 +128,8 @@ const CachedImage = React.createClass({
                 })
                 .catch(err => {
                     this.safeSetState({
-                        cachedImagePath: null
+                        cachedImagePath: null,
+                        isCacheable: false
                     });
                 });
             this.safeSetState({
