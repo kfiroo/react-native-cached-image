@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 
-const RNFatchBlob = require('react-native-fetch-blob').default;
+const RNFetchBlob = require('react-native-fetch-blob').default;
 
 const {
     fs
-} = RNFatchBlob;
+} = RNFetchBlob;
 
 const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
 
@@ -116,7 +116,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
     if (!_.has(activeDownloads, toFile)) {
         // create an active download for this file
         activeDownloads[toFile] = new Promise((resolve, reject) => {
-            RNFatchBlob
+            RNFetchBlob
                 .config({path: toFile})
                 .fetch('GET', fromUrl, headers)
                 .then(res => {
