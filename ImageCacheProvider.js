@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 
-const RNFatchBlob = require('react-native-fetch-blob').default;
+const RNFetchBlob = require('react-native-fetch-blob').default;
 
 const {
     fs
-} = RNFatchBlob;
+} = RNFetchBlob;
 
 const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
 
@@ -14,6 +14,7 @@ const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
 const defaultHeaders = {};
+const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
@@ -50,8 +51,8 @@ function generateCacheKey(url, options) {
     const filePath = pathParts.join('/');
 
     const parts = fileName.split('.');
-    // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
-    const type = parts.length > 1 ? parts.pop() : 'jpg';
+    const fileType = parts.length > 1 ? _.toLower(parts.pop()) : '';
+    const type = defaultImageTypes.includes(fileType) ? fileType : 'jpg';
 
     const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
     return SHA1(cacheable) + '.' + type;
@@ -116,7 +117,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
     if (!_.has(activeDownloads, toFile)) {
         // create an active download for this file
         activeDownloads[toFile] = new Promise((resolve, reject) => {
-            RNFatchBlob
+            RNFetchBlob
                 .config({path: toFile})
                 .fetch('GET', fromUrl, headers)
                 .then(res => {
