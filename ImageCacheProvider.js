@@ -14,6 +14,7 @@ const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
 const defaultHeaders = {};
+const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
@@ -50,8 +51,8 @@ function generateCacheKey(url, options) {
     const filePath = pathParts.join('/');
 
     const parts = fileName.split('.');
-    // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
-    const type = parts.length > 1 ? parts.pop() : 'jpg';
+    const fileType = parts.length > 1 ? _.toLower(parts.pop()) : '';
+    const type = defaultImageTypes.includes(fileType) ? fileType : 'jpg';
 
     const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
     return SHA1(cacheable) + '.' + type;
