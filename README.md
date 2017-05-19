@@ -13,9 +13,6 @@ or
 
     yarn add react-native-cached-image
 
-#### react-native-fs --> react-native-fetch-blob
-_\* As noted by [@Froelund](https://github.com/Froelund) [here](https://github.com/kfiroo/react-native-cached-image/issues/15) `react-native-fs` is not maintained anymore, but its author points to `react-native-fetch-blob` as an alternative [here](https://github.com/johanneslumpe/react-native-fs#this-project-is-not-actively-maintained-consider-using-react-native-fetch-blob-as-a-replacement)._
-
 We use [`react-native-fetch-blob`](https://github.com/wkh237/react-native-fetch-blob#installation) to handle file system access in this package and it requires an extra step during the installation.  
 _You should only have to do this once._
 
@@ -98,6 +95,10 @@ Promise is rejected if the file doesn't exist.
 Will download the file from the given url and save it to the device.  
 Returns a Promise that is resolved with the path to the underlying cached image file path if download was successful.  
 Promise is rejected if the download or file write failed.
+
+#### `ImageCacheProvider.seedCache(local: string, url: string, options: CacheOptions): Promise`
+Seed the cache for a given url with a local image.
+Useful to avoid having to download an image when you have a local copy.
 
 #### `ImageCacheProvider.deleteCachedImage(url: string, options: CacheOptions): Promise`
 Deletes the underlying cached image for a given url.

@@ -128,7 +128,8 @@ const CachedImage = React.createClass({
                 })
                 .catch(err => {
                     this.safeSetState({
-                        cachedImagePath: null
+                        cachedImagePath: null,
+                        isCacheable: false
                     });
                 });
             this.safeSetState({
@@ -176,16 +177,16 @@ const CachedImage = React.createClass({
             );
         }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
-        return (
-            <Image
-                {...imageProps}
-                source={source}
-                style={imageStyle}>
+        return this.props.renderImage({
+            ...imageProps,
+            style: imageStyle,
+            source,
+            children: (
                 <ActivityIndicator
                     {...activityIndicatorProps}
                     style={activityIndicatorStyle}/>
-            </Image>
-        );
+            )
+        });
     }
 });
 

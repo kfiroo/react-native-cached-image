@@ -2,11 +2,11 @@
 
 const _ = require('lodash');
 
-const RNFatchBlob = require('react-native-fetch-blob').default;
+const RNFetchBlob = require('react-native-fetch-blob').default;
 
 const {
     fs
-} = RNFatchBlob;
+} = RNFetchBlob;
 
 const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
 
@@ -14,6 +14,7 @@ const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
 const defaultHeaders = {};
+const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
@@ -50,8 +51,8 @@ function generateCacheKey(url, options) {
     const filePath = pathParts.join('/');
 
     const parts = fileName.split('.');
-    // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
-    const type = parts.length > 1 ? parts.pop() : 'jpg';
+    const fileType = parts.length > 1 ? _.toLower(parts.pop()) : '';
+    const type = defaultImageTypes.includes(fileType) ? fileType : 'jpg';
 
     const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
     return SHA1(cacheable) + '.' + type;
@@ -93,10 +94,11 @@ function ensurePath(dirPath) {
             !exists && fs.mkdir(dirPath)
         )
         .catch(err => {
-            // swallow acceptable errors
-            if (err.message !== 'mkdir failed, folder already exists') {
-                throw err;
+            // swallow folder already exists errors
+            if (err.message.includes('folder already exists')) {
+                return;
             }
+            throw err;
         });
 }
 
@@ -115,14 +117,19 @@ function downloadImage(fromUrl, toFile, headers = {}) {
     if (!_.has(activeDownloads, toFile)) {
         // create an active download for this file
         activeDownloads[toFile] = new Promise((resolve, reject) => {
-            RNFatchBlob
+            RNFetchBlob
                 .config({path: toFile})
                 .fetch('GET', fromUrl, headers)
-                .then(res => resolve(toFile))
-                .catch(err =>
-                    deleteFile(toFile)
-                        .then(() => reject(err))
-                )
+                .then(res => {
+                    if (Math.floor(res.respInfo.status / 100) !== 2) {
+                        throw new Error('Failed to successfully download image');
+                    }
+                    resolve(toFile);
+                })
+                .catch(err => {
+                    return deleteFile(toFile)
+                        .then(() => reject(err));
+                })
                 .finally(() => {
                     // cleanup
                     delete activeDownloads[toFile];
@@ -152,6 +159,8 @@ function runPrefetchTask(prefetcher, options) {
         return getCachedImagePath(url, options)
         // if not found download
             .catch(() => cacheImage(url, options))
+            // allow prefetch task to fail without terminating other prefetch tasks
+            .catch(_.noop)
             // then run next task
             .then(() => runPrefetchTask(prefetcher, options));
     }
@@ -275,6 +284,21 @@ function deleteMultipleCachedImages(urls, options = defaultOptions) {
 }
 
 /**
+* Seed the cache of a specified url with a local image
+* Handy if you have a local copy of a remote image, e.g. you just uploaded local to url.
+* @param local
+* @param url
+* @param options
+* @returns {Promise}
+*/
+function seedCache(local, url, options = defaultOptions) {
+  const filePath = getCachedImageFilePath(url, options);
+  const dirPath = getDirPath(filePath);
+  return ensurePath(dirPath)
+    .then(() => fs.cp(local, filePath))
+}
+
+/**
  * Clear the entire cache.
  * @returns {Promise}
  */
@@ -311,5 +335,6 @@ module.exports = {
     cacheMultipleImages,
     deleteMultipleCachedImages,
     clearCache,
+    seedCache,
     getCacheInfo
 };

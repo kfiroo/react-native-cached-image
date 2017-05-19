@@ -10,7 +10,8 @@ const {
     Button,
     Dimensions,
     StyleSheet,
-    AppRegistry
+    AppRegistry,
+    ListView
 } = ReactNative;
 
 const CachedImage = require('react-native-cached-image');
@@ -41,13 +42,19 @@ const styles = StyleSheet.create({
     }
 });
 
-const localImage1 = require('./loading.jpg');
+const loading = require('./loading.jpg');
 
-const image1 = 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Big_Bog_State_Recreation_Area.jpg';
-const image2 = 'https://s-media-cache-ak0.pinimg.com/originals/62/a7/6f/62a76fde4009c4e3047b4b5e17899a8d.jpg';
+const images = [
+    'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/wrong-image.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/cheeseburger-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/friendsgiving-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/dogs-play-date-full.jpg'
+];
 
-function formatBytes(bytes,decimals) {
-    if(bytes === 0) {
+function formatBytes(bytes, decimals) {
+    if (bytes === 0) {
         return '0 B';
     }
     const k = 1000;
@@ -60,22 +67,21 @@ function formatBytes(bytes,decimals) {
 const CachedImageExample = React.createClass({
 
     getInitialState() {
+        const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         return {
-            showNextImage: false
+            showNextImage: false,
+            dataSource: ds.cloneWithRows(images)
         };
     },
 
     componentWillMount() {
-        ImageCacheProvider.cacheMultipleImages([
-            image1,
-            image2
-        ]);
-    },
-
-    loadMore() {
-        this.setState({
-            showNextImage: true
-        });
+        ImageCacheProvider.cacheMultipleImages(images)
+            .then(() => {
+                console.log('cacheMultipleImages Done');
+            })
+            .catch(err => {
+                console.log('cacheMultipleImages caught an error: ', err);
+            });
     },
 
     clearCache() {
@@ -84,20 +90,25 @@ const CachedImageExample = React.createClass({
 
     getCacheInfo() {
         ImageCacheProvider.getCacheInfo()
-            .then(({size}) => {
-                ReactNative.Alert.alert('Cache Info', `size: ${formatBytes(size)}`);
+            .then(({size, files}) => {
+                ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
+    },
+
+    renderRow(uri) {
+        return (
+            <CachedImage
+                source={{uri}}
+                defaultSource={loading}
+                style={styles.image}
+            />
+        );
     },
 
     render() {
         return (
             <View style={styles.container}>
                 <View style={styles.buttons}>
-                    <Button
-                        onPress={this.loadMore}
-                        title="Load Next Image"
-                        color="#b348ff"
-                    />
                     <Button
                         onPress={this.clearCache}
                         title="Clear Cache"
@@ -109,23 +120,10 @@ const CachedImageExample = React.createClass({
                         color="#2ce7cc"
                     />
                 </View>
-                <CachedImage
-                    source={{
-                        uri: image1
-                    }}
-                    defaultSource={localImage1}
-                    style={styles.image}
+                <ListView
+                    dataSource={this.state.dataSource}
+                    renderRow={this.renderRow}
                 />
-                {
-                    this.state.showNextImage && (
-                        <CachedImage
-                            source={{
-                                uri: image2
-                            }}
-                            style={styles.image}
-                        />
-                    )
-                }
             </View>
         );
     }
