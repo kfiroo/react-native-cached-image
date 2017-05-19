@@ -153,6 +153,7 @@ const CachedImage = React.createClass({
             } : this.props.source;
         return this.props.renderImage({
             ...props,
+            key: props.key || source.uri,
             style,
             source
         });
@@ -169,7 +170,7 @@ const CachedImage = React.createClass({
 
         // if the imageStyle has borderRadius it will break the loading image view on android
         // so we only show the ActivityIndicator
-        if (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius) {
+        if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
             return (
                 <ActivityIndicator
                     {...activityIndicatorProps}
@@ -180,6 +181,7 @@ const CachedImage = React.createClass({
         return this.props.renderImage({
             ...imageProps,
             style: imageStyle,
+            key: source.uri,
             source,
             children: (
                 <ActivityIndicator
