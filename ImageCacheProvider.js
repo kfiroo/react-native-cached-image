@@ -115,17 +115,21 @@ function ensurePath(dirPath) {
 function downloadImage(fromUrl, toFile, headers = {}) {
     // use toFile as the key as is was created using the cacheKey
     if (!_.has(activeDownloads, toFile)) {
+        //Using a temporary file, if the download is accidentally interrupted, it will not produce a disabled file
+        const tmpFile = toFile + '.tmp';
         // create an active download for this file
         activeDownloads[toFile] = new Promise((resolve, reject) => {
             RNFetchBlob
-                .config({path: toFile})
+                .config({path: tmpFile})
                 .fetch('GET', fromUrl, headers)
                 .then(res => {
                     if (Math.floor(res.respInfo.status / 100) !== 2) {
                         throw new Error('Failed to successfully download image');
                     }
-                    resolve(toFile);
+                    //The download is complete and rename the temporary file
+                    return fs.mv(tmpFile, toFile);
                 })
+                .then(() => resolve(toFile))
                 .catch(err => {
                     return deleteFile(toFile)
                         .then(() => reject(err));
