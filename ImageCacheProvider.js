@@ -131,7 +131,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
                 })
                 .then(() => resolve(toFile))
                 .catch(err => {
-                    return deleteFile(toFile)
+                    return deleteFile(tmpFile)
                         .then(() => reject(err));
                 })
                 .finally(() => {
