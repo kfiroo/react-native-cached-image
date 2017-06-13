@@ -174,7 +174,7 @@ const CachedImage = React.createClass({
             return (
                 <ActivityIndicator
                     {...activityIndicatorProps}
-                    style={[imageStyle, activityIndicatorStyle]}/>
+                    style={activityIndicatorStyle}/>
             );
         }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
