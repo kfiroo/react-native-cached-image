@@ -23,6 +23,68 @@ const defaultOptions = {
 
 const activeDownloads = {};
 
+/**
+ *  Limiter function helper, this function will allow `numResources` promises to run at once
+ * @param numResources - the number of concurrent promises to run
+ * @return {{available: *, max: *}}
+ */
+function resourceLimiter(numResources) {
+    const resources = {
+        available: numResources,
+        max: numResources
+    };
+
+    const futures = []; //array of callbacks to trigger the promised resources
+
+    /*
+     * takes a resource.  returns a promises that resolves when the resource is available.
+     * promises resolve FIFO.
+     */
+    resources.take = function () {
+        if (resources.available > 0) {
+            // no need to wait - take a slot and resolve immediately
+            resources.available -= 1;
+            return Promise.resolve();
+        }
+        // need to wait - return promise that resolves when wait is over
+        return new Promise(function (resolve, reject) {
+            futures.push(resolve);
+        });
+
+    };
+
+    let emptyPromiseResolver;
+    const emptyPromise = new Promise(function (resolve, reject) {
+        emptyPromiseResolver = resolve;
+    });
+
+    /*
+     * returns a resource to the pool
+     */
+    resources.give = function () {
+        if (futures.length) {
+            // we have a task waiting - execute it
+            const future = futures.shift(); // FIFO
+            future();
+        } else {
+            // no tasks waiting - increase the available count
+            resources.available += 1;
+            if (resources.available === resources.max) {
+                emptyPromiseResolver('Queue is empty')
+            }
+        }
+    };
+
+    /*
+     * Returns a promise that resolves when the queue is empty
+     */
+    resources.emptyPromise = function () {
+        return emptyPromise;
+    };
+
+    return resources;
+}
+
 function serializeObjectKeys(obj) {
     return _(obj)
         .toPairs()
