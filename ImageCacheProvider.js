@@ -205,7 +205,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
     return activeDownloads[toFile];
 }
 
-function createPrefetcer(list) {
+function createPrefetcher(list) {
     const urls = _.clone(list);
     return {
         next() {
@@ -327,12 +327,12 @@ function deleteCachedImage(url, options = defaultOptions) {
  * @returns {Promise}
  */
 function cacheMultipleImages(urls, options = defaultOptions) {
-    const prefetcher = createPrefetcer(urls);
     const numberOfWorkers = urls.length;
     const promises = _.times(numberOfWorkers, () =>
         runPrefetchTask(prefetcher, options)
     );
     return Promise.all(promises);
+    const prefetcher = createPrefetcher(urls);
 }
 
 /**
