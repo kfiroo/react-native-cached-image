@@ -8,12 +8,9 @@ const {
     fs
 } = RNFetchBlob;
 
-const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
-const baseBundleDir = fs.dirs.MainBundleDir + '/imagesCacheDir';
-
 const LOCATION = {
-    CACHE: 'cache',
-    BUNDLE: 'bundle'
+    CACHE: fs.dirs.CacheDir + '/imagesCacheDir',
+    BUNDLE: fs.dirs.MainBundleDir + '/imagesCacheDir'
 };
 
 const SHA1 = require("crypto-js/sha1");
@@ -66,11 +63,7 @@ function generateCacheKey(url, options) {
 }
 
 function getBaseDir(cacheLocation) {
-    switch (cacheLocation) {
-        case LOCATION.CACHE: return baseCacheDir;
-        case LOCATION.BUNDLE: return baseBundleDir;
-        default: return baseCacheDir;
-    }
+    return cacheLocation || LOCATION.CACHE;
 }
 
 function getCachePath(url, options) {
@@ -105,9 +98,16 @@ function getDirPath(filePath) {
 
 function ensurePath(dirPath) {
     return fs.isDir(dirPath)
-        .then(exists =>
-            !exists && fs.mkdir(dirPath)
-        )
+        .then(isDir => {
+            if (!isDir) {
+                return fs.mkdir(dirPath)
+                    .then(() => fs.exists(dirPath).then(exists => {
+                        // Check if dir has indeed been created because
+                        // there's no exception on incorrect user-defined paths (?)...
+                        if (!exists) throw new Error('Invalid cacheLocation');
+                    }))
+            }
+        })
         .catch(err => {
             // swallow folder already exists errors
             if (err.message.includes('folder already exists')) {
