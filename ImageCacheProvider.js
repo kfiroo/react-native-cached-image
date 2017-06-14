@@ -18,7 +18,10 @@ const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
-    useQueryParamsInCacheKey: false
+    useQueryParamsInCacheKey: false,
+    // Right now this options is used just by cacheMultipleImages
+    // 0 means no limit, a number different than that would be number of allowed concurrent tasks
+    numberOfParallelTasks: 0,
 };
 
 const activeDownloads = {};
