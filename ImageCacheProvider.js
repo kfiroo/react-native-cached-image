@@ -344,7 +344,8 @@ function cacheMultipleImages(urls, options = defaultOptions) {
 
     // Factory that returns the next runPrefetchTask and release a slot when finishes
     const executeTask = () => () => runPrefetchTask(prefetcher, options)
-        .then(() => limiter.give());
+        .then(() => limiter.give()) // release a resource when finish.
+        .catch(() => limiter.give()); // release if there is an error too.
 
     for (let i = 0; i < numberOfTasks; i++) {
         tasks[i] = limiter.take().then(executeTask());
