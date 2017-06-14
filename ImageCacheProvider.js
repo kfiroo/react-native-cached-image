@@ -330,12 +330,27 @@ function deleteCachedImage(url, options = defaultOptions) {
  * @returns {Promise}
  */
 function cacheMultipleImages(urls, options = defaultOptions) {
-    const numberOfWorkers = urls.length;
-    const promises = _.times(numberOfWorkers, () =>
-        runPrefetchTask(prefetcher, options)
-    );
-    return Promise.all(promises);
     const prefetcher = createPrefetcher(urls);
+    const numberOfTasks = urls.length;
+    if(options.numberOfParallelTasks === 0 ) {
+        const promises = _.times(numberOfTasks, () =>
+            runPrefetchTask(prefetcher, options)
+        );
+        return Promise.all(promises);
+    }
+
+    const limiter = resourceLimiter(options.numberOfParallelTasks);
+    const tasks = new Array(numberOfTasks);
+
+    // Factory that returns the next runPrefetchTask and release a slot when finishes
+    const executeTask = () => () => runPrefetchTask(prefetcher, options)
+        .then(() => limiter.give());
+
+    for (let i = 0; i < numberOfTasks; i++) {
+        tasks[i] = limiter.take().then(executeTask());
+    }
+
+    return Promise.all(tasks)
 }
 
 /**
