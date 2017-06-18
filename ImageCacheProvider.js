@@ -22,7 +22,8 @@ const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
     useQueryParamsInCacheKey: false,
-    cacheLocation: LOCATION.CACHE
+    cacheLocation: LOCATION.CACHE,
+    readOnlyCacheDirs: null,
 };
 
 const activeDownloads = {};
@@ -75,6 +76,19 @@ function getCachePath(url, options) {
     } = new URL(url);
     return host.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
+
+function getCachedImageFilePaths(url, options) {
+  const cachePath = getCachePath(url, options);
+  const cacheKey = generateCacheKey(url, options);
+  let paths = [];
+  if(options.readOnlyCacheDirs) {
+    paths = options.readOnlyCacheDirs.map(location => `${getBaseDir(location)}/${cachePath}/${cacheKey}`);
+  }
+  paths.push(`${getBaseDir(options.cacheLocation)}/${cachePath}/${cacheKey}`);
+
+  return paths;
+}
+
 
 function getCachedImageFilePath(url, options) {
     const cachePath = getCachePath(url, options);
@@ -221,8 +235,8 @@ function isCacheable(url) {
  * @returns {Promise.<String>}
  */
 function getCachedImagePath(url, options = defaultOptions) {
-    const filePath = getCachedImageFilePath(url, options);
-    return fs.stat(filePath)
+    const filePaths = getCachedImageFilePaths(url, options);
+    const promises = filePaths.map(filePath => fs.stat(filePath)
         .then(res => {
             if (res.type !== 'file') {
                 // reject the promise if res is not a file
@@ -235,11 +249,21 @@ function getCachedImagePath(url, options = defaultOptions) {
                         throw new Error('Failed to get image from cache');
                     });
             }
-            return filePath;
+        return filePath;
         })
         .catch(err => {
-            throw err;
-        })
+            return err;
+        }));
+    return Promise.all(promises)
+        .then(resolutions => {
+            const result = resolutions.reduce((accumulator, currentValue) => {
+            return accumulator instanceof String ? accumulator : currentValue;
+        }, new Error('Failed to get image from cache'));
+        if(result instanceof Error) {
+            throw result;
+        }
+        return result;
+    });
 }
 
 /**
