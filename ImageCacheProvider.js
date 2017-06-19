@@ -80,15 +80,13 @@ function getCachePath(url, options) {
 function getCachedImageFilePaths(url, options) {
   const cachePath = getCachePath(url, options);
   const cacheKey = generateCacheKey(url, options);
-  let paths = [];
+  let paths = [`${getBaseDir(options.cacheLocation)}/${cachePath}/${cacheKey}`];
   if(options.readOnlyCacheDirs) {
-    paths = options.readOnlyCacheDirs.map(location => `${getBaseDir(location)}/${cachePath}/${cacheKey}`);
+    paths = paths.concat(options.readOnlyCacheDirs.map(location => `${getBaseDir(location)}/${cachePath}/${cacheKey}`));
   }
-  paths.push(`${getBaseDir(options.cacheLocation)}/${cachePath}/${cacheKey}`);
 
   return paths;
 }
-
 
 function getCachedImageFilePath(url, options) {
     const cachePath = getCachePath(url, options);
@@ -257,9 +255,9 @@ function getCachedImagePath(url, options = defaultOptions) {
     return Promise.all(promises)
         .then(resolutions => {
             const result = resolutions.reduce((accumulator, currentValue) => {
-            return accumulator instanceof String ? accumulator : currentValue;
+            return Object.prototype.toString.apply(accumulator) === '[object String]' ? accumulator : currentValue;
         }, new Error('Failed to get image from cache'));
-        if(result instanceof Error) {
+        if(Object.prototype.toString.apply(result) === '[object Error]') {
             throw result;
         }
         return result;
