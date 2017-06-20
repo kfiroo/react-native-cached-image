@@ -107,7 +107,10 @@ Deletes the underlying cached image for a given url.
 Cache a list of urls, if any of the urls is already cached will not try to download again.
 
 #### `ImageCacheProvider.deleteMultipleCachedImages(urls: string[], options: CacheOptions): Promise`
-Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing
+Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing.
+
+### `ImageCacheProvider.clearCache(): Promise`
+Deletes all cached images.
 
 #### Dependencies
 - [lodash](https://github.com/lodash/lodash) for props handling
