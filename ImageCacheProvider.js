@@ -236,7 +236,7 @@ function getCachedImagePath(url, options = defaultOptions) {
     const filePaths = getCachedImageFilePaths(url, options);
     const promises = filePaths.map(filePath => fs.stat(filePath)
         .then(res => {
-            if (res.type !== 'file') {
+            if (['file', 'asset'].indexOf(res.type) === -1) {
                 // reject the promise if res is not a file
                 throw new Error('Failed to get image from cache');
             }
