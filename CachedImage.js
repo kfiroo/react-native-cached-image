@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
+    return _.omit(props, ['source', 'defaultSource', 'placeholder', 'loading', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
@@ -151,6 +151,14 @@ const CachedImage = React.createClass({
         const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
                 uri: 'file://' + this.state.cachedImagePath
             } : this.props.source;
+        if (!this.state.cachedImagePath) {
+          return this.props.renderImage({
+              ...props,
+              key: `${props.key || source.uri}error`,
+              style,
+              source: this.props.placeholder
+          });
+        }
         return this.props.renderImage({
             ...props,
             key: props.key || source.uri,
@@ -166,29 +174,34 @@ const CachedImage = React.createClass({
         const activityIndicatorProps = _.omit(this.props.activityIndicatorProps, ['style']);
         const activityIndicatorStyle = this.props.activityIndicatorProps.style || styles.loader;
 
-        const source = this.props.defaultSource;
+        const loading = this.props.loading;
+
+        // const source = this.props.defaultSource;
 
         // if the imageStyle has borderRadius it will break the loading image view on android
         // so we only show the ActivityIndicator
-        if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
-            return (
-                <ActivityIndicator
-                    {...activityIndicatorProps}
-                    style={[imageStyle, activityIndicatorStyle]}/>
-            );
+        // if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
+        if (loading) {
+          return loading();
         }
+        return (
+            <ActivityIndicator
+                {...activityIndicatorProps}
+                style={[imageStyle, activityIndicatorStyle]}/>
+        );
+        // }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
-        return this.props.renderImage({
-            ...imageProps,
-            style: imageStyle,
-            key: source.uri,
-            source,
-            children: (
-                <ActivityIndicator
-                    {...activityIndicatorProps}
-                    style={activityIndicatorStyle}/>
-            )
-        });
+        // return this.props.renderImage({
+        //     ...imageProps,
+        //     style: imageStyle,
+        //     key: source.uri,
+        //     source,
+        //     children: (
+        //         <ActivityIndicator
+        //             {...activityIndicatorProps}
+        //             style={activityIndicatorStyle}/>
+        //     )
+        // });
     }
 });
 
