@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'loadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
+    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
@@ -174,16 +174,16 @@ const CachedImage = React.createClass({
         const activityIndicatorProps = _.omit(this.props.activityIndicatorProps, ['style']);
         const activityIndicatorStyle = this.props.activityIndicatorProps.style || styles.loader;
 
-        const loadingIndicator = this.props.loadingIndicator;
+        const LoadingIndicator = this.props.loadingIndicator;
 
         const source = this.props.defaultSource;
 
         // if the imageStyle has borderRadius it will break the loading image view on android
         // so we only show the ActivityIndicator
         if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
-            if (loadingIndicator) {
+            if (LoadingIndicator) {
               return (
-                <loadingIndicator
+                <LoadingIndicator
                   {...activityIndicatorProps}
                   style={[imageStyle, activityIndicatorStyle]} />
               );
@@ -201,8 +201,8 @@ const CachedImage = React.createClass({
             key: source.uri,
             source,
             children: (
-                typeof loadingIndicator === 'function'
-                  ? <loadingIndicator
+                LoadingIndicator
+                  ? <LoadingIndicator
                       {...activityIndicatorProps}
                       style={activityIndicatorStyle} />
                   : <ActivityIndicator
