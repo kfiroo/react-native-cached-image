@@ -182,7 +182,11 @@ const CachedImage = React.createClass({
         // so we only show the ActivityIndicator
         if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
             if (loadingIndicator) {
-              return loadingIndicator();
+              return (
+                <loadingIndicator
+                  {...activityIndicatorProps}
+                  style={[imageStyle, activityIndicatorStyle]} />
+              );
             }
             return (
                 <ActivityIndicator
@@ -198,7 +202,9 @@ const CachedImage = React.createClass({
             source,
             children: (
                 typeof loadingIndicator === 'function'
-                  ? loadingIndicator()
+                  ? <loadingIndicator
+                      {...activityIndicatorProps}
+                      style={activityIndicatorStyle} />
                   : <ActivityIndicator
                       {...activityIndicatorProps}
                       style={activityIndicatorStyle}/>
