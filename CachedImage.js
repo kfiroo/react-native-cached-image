@@ -7,6 +7,7 @@ const flattenStyle = ReactNative.StyleSheet.flatten;
 const ImageCacheProvider = require('./ImageCacheProvider');
 
 const {
+    View,
     Image,
     ActivityIndicator,
     NetInfo,
@@ -151,7 +152,7 @@ const CachedImage = React.createClass({
         const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
                 uri: 'file://' + this.state.cachedImagePath
             } : this.props.source;
-        if (!this.state.cachedImagePath) {
+        if (this.props.fallbackSource && !this.state.cachedImagePath) {
           return this.props.renderImage({
               ...props,
               key: `${props.key || source.uri}error`,
@@ -183,9 +184,9 @@ const CachedImage = React.createClass({
         if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
             if (LoadingIndicator) {
               return (
-                <LoadingIndicator
-                  {...activityIndicatorProps}
-                  style={[imageStyle, activityIndicatorStyle]} />
+                <View style={[imageStyle, activityIndicatorStyle]}>
+                  <LoadingIndicator {...activityIndicatorProps} />
+                </View>
               );
             }
             return (
@@ -202,9 +203,9 @@ const CachedImage = React.createClass({
             source,
             children: (
                 LoadingIndicator
-                  ? <LoadingIndicator
-                      {...activityIndicatorProps}
-                      style={activityIndicatorStyle} />
+                  ? <View style={[imageStyle, activityIndicatorStyle]}>
+                      <LoadingIndicator {...activityIndicatorProps} />
+                    </View>
                   : <ActivityIndicator
                       {...activityIndicatorProps}
                       style={activityIndicatorStyle}/>
