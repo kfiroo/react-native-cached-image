@@ -8,7 +8,10 @@ const {
     fs
 } = RNFetchBlob;
 
-const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
+const LOCATION = {
+    CACHE: fs.dirs.CacheDir + '/imagesCacheDir',
+    BUNDLE: fs.dirs.MainBundleDir + '/imagesCacheDir'
+};
 
 const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
@@ -18,7 +21,9 @@ const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
-    useQueryParamsInCacheKey: false
+    useQueryParamsInCacheKey: false,
+    cacheLocation: LOCATION.CACHE,
+    readOnlyCacheDirs: null,
 };
 
 const activeDownloads = {};
@@ -58,6 +63,10 @@ function generateCacheKey(url, options) {
     return SHA1(cacheable) + '.' + type;
 }
 
+function getBaseDir(cacheLocation) {
+    return cacheLocation || LOCATION.CACHE;
+}
+
 function getCachePath(url, options) {
     if (options.cacheGroup) {
         return options.cacheGroup;
@@ -68,11 +77,22 @@ function getCachePath(url, options) {
     return host.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 
+function getCachedImageFilePaths(url, options) {
+  const cachePath = getCachePath(url, options);
+  const cacheKey = generateCacheKey(url, options);
+  let paths = [`${getBaseDir(options.cacheLocation)}/${cachePath}/${cacheKey}`];
+  if(options.readOnlyCacheDirs) {
+    paths = paths.concat(options.readOnlyCacheDirs.map(location => `${getBaseDir(location)}/${cachePath}/${cacheKey}`));
+  }
+
+  return paths;
+}
+
 function getCachedImageFilePath(url, options) {
     const cachePath = getCachePath(url, options);
     const cacheKey = generateCacheKey(url, options);
 
-    return `${baseCacheDir}/${cachePath}/${cacheKey}`;
+    return `${getBaseDir(options.cacheLocation)}/${cachePath}/${cacheKey}`;
 }
 
 function deleteFile(filePath) {
@@ -90,9 +110,16 @@ function getDirPath(filePath) {
 
 function ensurePath(dirPath) {
     return fs.isDir(dirPath)
-        .then(exists =>
-            !exists && fs.mkdir(dirPath)
-        )
+        .then(isDir => {
+            if (!isDir) {
+                return fs.mkdir(dirPath)
+                    .then(() => fs.exists(dirPath).then(exists => {
+                        // Check if dir has indeed been created because
+                        // there's no exception on incorrect user-defined paths (?)...
+                        if (!exists) throw new Error('Invalid cacheLocation');
+                    }))
+            }
+        })
         .catch(err => {
             // swallow folder already exists errors
             if (err.message.includes('folder already exists')) {
@@ -210,10 +237,10 @@ function isCacheable(url) {
  * @returns {Promise.<String>}
  */
 function getCachedImagePath(url, options = defaultOptions) {
-    const filePath = getCachedImageFilePath(url, options);
-    return fs.stat(filePath)
+    const filePaths = getCachedImageFilePaths(url, options);
+    const promises = filePaths.map(filePath => fs.stat(filePath)
         .then(res => {
-            if (res.type !== 'file') {
+            if (['file', 'asset'].indexOf(res.type) === -1) {
                 // reject the promise if res is not a file
                 throw new Error('Failed to get image from cache');
             }
@@ -224,11 +251,21 @@ function getCachedImagePath(url, options = defaultOptions) {
                         throw new Error('Failed to get image from cache');
                     });
             }
-            return filePath;
+        return filePath;
         })
         .catch(err => {
-            throw err;
-        })
+            return err;
+        }));
+    return Promise.all(promises)
+        .then(resolutions => {
+            const result = resolutions.reduce((accumulator, currentValue) => {
+            return Object.prototype.toString.apply(accumulator) === '[object String]' ? accumulator : currentValue;
+        }, new Error('Failed to get image from cache'));
+        if(Object.prototype.toString.apply(result) === '[object Error]') {
+            throw result;
+        }
+        return result;
+    });
 }
 
 /**
@@ -304,23 +341,25 @@ function seedCache(local, url, options = defaultOptions) {
 
 /**
  * Clear the entire cache.
+ * @param cacheLocation
  * @returns {Promise}
  */
-function clearCache() {
-    return fs.unlink(baseCacheDir)
+function clearCache(cacheLocation) {
+    return fs.unlink(getBaseDir(cacheLocation))
         .catch(() => {
             // swallow exceptions if path doesn't exist
         })
-        .then(() => ensurePath(baseCacheDir));
+        .then(() => ensurePath(getBaseDir(cacheLocation)));
 }
 
 /**
  * Return info about the cache, list of files and the total size of the cache.
+ * @param cacheLocation
  * @returns {Promise.<{size}>}
  */
-function getCacheInfo() {
-    return ensurePath(baseCacheDir)
-        .then(() => collectFilesInfo(baseCacheDir))
+function getCacheInfo(cacheLocation) {
+    return ensurePath(getBaseDir(cacheLocation))
+        .then(() => collectFilesInfo(getBaseDir(cacheLocation)))
         .then(cache => {
             const files = _.flattenDeep(cache);
             const size = _.sumBy(files, 'size');
@@ -341,5 +380,6 @@ module.exports = {
     deleteMultipleCachedImages,
     clearCache,
     seedCache,
-    getCacheInfo
+    getCacheInfo,
+    LOCATION
 };
