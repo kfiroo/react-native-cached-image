@@ -18,10 +18,75 @@ const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
-    useQueryParamsInCacheKey: false
+    useQueryParamsInCacheKey: false,
+    // Right now this options is used just by cacheMultipleImages
+    // 0 means no limit, a number different than that would be number of allowed concurrent tasks
+    numberOfParallelTasks: 0,
 };
 
 const activeDownloads = {};
+
+/**
+ *  Limiter function helper, this function will allow `numResources` promises to run at once
+ * @param numResources - the number of concurrent promises to run
+ * @return {{available: *, max: *}}
+ */
+function resourceLimiter(numResources) {
+    const resources = {
+        available: numResources,
+        max: numResources
+    };
+
+    const futures = []; //array of callbacks to trigger the promised resources
+
+    /*
+     * takes a resource.  returns a promises that resolves when the resource is available.
+     * promises resolve FIFO.
+     */
+    resources.take = function () {
+        if (resources.available > 0) {
+            // no need to wait - take a slot and resolve immediately
+            resources.available -= 1;
+            return Promise.resolve();
+        }
+        // need to wait - return promise that resolves when wait is over
+        return new Promise(function (resolve, reject) {
+            futures.push(resolve);
+        });
+
+    };
+
+    let emptyPromiseResolver;
+    const emptyPromise = new Promise(function (resolve, reject) {
+        emptyPromiseResolver = resolve;
+    });
+
+    /*
+     * returns a resource to the pool
+     */
+    resources.give = function () {
+        if (futures.length) {
+            // we have a task waiting - execute it
+            const future = futures.shift(); // FIFO
+            future();
+        } else {
+            // no tasks waiting - increase the available count
+            resources.available += 1;
+            if (resources.available === resources.max) {
+                emptyPromiseResolver('Queue is empty')
+            }
+        }
+    };
+
+    /*
+     * Returns a promise that resolves when the queue is empty
+     */
+    resources.emptyPromise = function () {
+        return emptyPromise;
+    };
+
+    return resources;
+}
 
 function serializeObjectKeys(obj) {
     return _(obj)
@@ -143,7 +208,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
     return activeDownloads[toFile];
 }
 
-function createPrefetcer(list) {
+function createPrefetcher(list) {
     const urls = _.clone(list);
     return {
         next() {
@@ -265,12 +330,28 @@ function deleteCachedImage(url, options = defaultOptions) {
  * @returns {Promise}
  */
 function cacheMultipleImages(urls, options = defaultOptions) {
-    const prefetcher = createPrefetcer(urls);
-    const numberOfWorkers = urls.length;
-    const promises = _.times(numberOfWorkers, () =>
-        runPrefetchTask(prefetcher, options)
-    );
-    return Promise.all(promises);
+    const prefetcher = createPrefetcher(urls);
+    const numberOfTasks = urls.length;
+    if(options.numberOfParallelTasks === 0 ) {
+        const promises = _.times(numberOfTasks, () =>
+            runPrefetchTask(prefetcher, options)
+        );
+        return Promise.all(promises);
+    }
+
+    const limiter = resourceLimiter(options.numberOfParallelTasks);
+    const tasks = new Array(numberOfTasks);
+
+    // Factory that returns the next runPrefetchTask and release a slot when finishes
+    const executeTask = () => () => runPrefetchTask(prefetcher, options)
+        .then(() => limiter.give()) // release a resource when finish.
+        .catch(() => limiter.give()); // release if there is an error too.
+
+    for (let i = 0; i < numberOfTasks; i++) {
+        tasks[i] = limiter.take().then(executeTask());
+    }
+
+    return Promise.all(tasks)
 }
 
 /**
