@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
 const loading = require('./loading.jpg');
 
 const images = [
+    'https://images.unsplash.com/photo-1494783367193-149034c05e8f?.jpg',
     'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/wrong-image.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
@@ -65,7 +66,6 @@ function formatBytes(bytes, decimals) {
 }
 
 const CachedImageExample = React.createClass({
-
     getInitialState() {
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         return {
@@ -98,7 +98,7 @@ const CachedImageExample = React.createClass({
     renderRow(uri) {
         return (
             <CachedImage
-                source={{uri}}
+                source={{uri, cache: 'only-if-cached'}}
                 defaultSource={loading}
                 style={styles.image}
             />
@@ -123,6 +123,7 @@ const CachedImageExample = React.createClass({
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this.renderRow}
+                    initialListSize={1}
                 />
             </View>
         );

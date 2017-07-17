@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const debug = require('console-network');
 
 const RNFetchBlob = require('react-native-fetch-blob').default;
 
@@ -118,27 +119,54 @@ function downloadImage(fromUrl, toFile, headers = {}) {
         //Using a temporary file, if the download is accidentally interrupted, it will not produce a disabled file
         const tmpFile = toFile + '.tmp';
         // create an active download for this file
-        activeDownloads[toFile] = new Promise((resolve, reject) => {
-            RNFetchBlob
-                .config({path: tmpFile})
-                .fetch('GET', fromUrl, headers)
-                .then(res => {
-                    if (Math.floor(res.respInfo.status / 100) !== 2) {
-                        throw new Error('Failed to successfully download image');
+        activeDownloads[toFile] = RNFetchBlob
+            .config({path: tmpFile})
+            .fetch('GET', fromUrl, headers)
+            .then(res => {
+                debug.network(fromUrl);
+                debug.networkEnd(fromUrl, {
+                    'General': {
+                        url: fromUrl,
+                        method: 'GET',
+                        status: res.respInfo.status,
+                        query: null,
+                    },
+                    'Response Headers': headers,
+                    'Response': {
+                        Raw: toFile
                     }
-                    //The download is complete and rename the temporary file
-                    return fs.mv(tmpFile, toFile);
-                })
-                .then(() => resolve(toFile))
-                .catch(err => {
-                    return deleteFile(tmpFile)
-                        .then(() => reject(err));
-                })
-                .finally(() => {
-                    // cleanup
-                    delete activeDownloads[toFile];
                 });
-        });
+                if (res.respInfo.status === 304) {
+                    return Promise.resolve(toFile);
+                }
+                let status = Math.floor(res.respInfo.status / 100);
+                if (status !== 2) {
+                    throw new Error('Failed to successfully download image');
+                }
+                // The download is complete and rename the temporary file
+                return fs.mv(tmpFile, toFile);
+            })
+            .catch(err => {
+                debug.network(fromUrl);
+                debug.networkEnd(fromUrl, {
+                    'General': {
+                        url: fromUrl,
+                        method: 'GET',
+                        status: res.respInfo.status,
+                        query: null,
+                    },
+                    'Response Headers': headers,
+                    'Response': {
+                        Error: err
+                    }
+                });
+            })
+            .then(() => {
+                // cleanup
+                deleteFile(tmpFile)
+                delete activeDownloads[toFile];
+                return toFile
+            });
     }
     return activeDownloads[toFile];
 }
@@ -161,7 +189,9 @@ function runPrefetchTask(prefetcher, options) {
     if (isCacheable(url)) {
         // check cache
         return getCachedImagePath(url, options)
-        // if not found download
+            // TODO: check for expiration
+            .then(() => {})
+            // if not found download
             .catch(() => cacheImage(url, options))
             // allow prefetch task to fail without terminating other prefetch tasks
             .catch(_.noop)
