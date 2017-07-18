@@ -1,8 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const debug = require('console-network');
-
+// const debug = require('console-network');
+const MemoryCache = require('react-native-clcasher/MemoryCache').default;
 const RNFetchBlob = require('react-native-fetch-blob').default;
 
 const {
@@ -14,15 +14,15 @@ const baseCacheDir = fs.dirs.CacheDir + '/imagesCacheDir';
 const SHA1 = require("crypto-js/sha1");
 const URL = require('url-parse');
 
-const defaultHeaders = {};
 const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
-const defaultResolveHeaders = _.constant(defaultHeaders);
 
 const defaultOptions = {
-    useQueryParamsInCacheKey: false
+    useQueryParamsInCacheKey: false,
+    source: {},
 };
 
 const activeDownloads = {};
+const HEADERS_CACHE_CONTROL = 'Cache-Control';
 
 function serializeObjectKeys(obj) {
     return _(obj)
@@ -123,47 +123,50 @@ function downloadImage(fromUrl, toFile, headers = {}) {
             .config({path: tmpFile})
             .fetch('GET', fromUrl, headers)
             .then(res => {
-                debug.network(fromUrl);
-                debug.networkEnd(fromUrl, {
-                    'General': {
-                        url: fromUrl,
-                        method: 'GET',
-                        status: res.respInfo.status,
-                        query: null,
-                    },
-                    'Response Headers': headers,
-                    'Response': {
-                        Raw: toFile
-                    }
-                });
+                // console.log(res.respInfo.status, fromUrl)
+                // debug.network(fromUrl);
+                // debug.networkEnd(fromUrl, {
+                //     'General': {
+                //         url: fromUrl,
+                //         method: 'GET',
+                //         status: res.respInfo.status,
+                //         query: null,
+                //     },
+                //     'Response Headers': headers,
+                //     'Response': {
+                //         Raw: toFile
+                //     }
+                // });
                 if (res.respInfo.status === 304) {
                     return Promise.resolve(toFile);
                 }
                 let status = Math.floor(res.respInfo.status / 100);
                 if (status !== 2) {
-                    throw new Error('Failed to successfully download image');
+                    throw new Error(res.respInfo.status + ' Failed to successfully download image');
                 }
                 // The download is complete and rename the temporary file
+                setFileInfo(toFile, headers);
                 return fs.mv(tmpFile, toFile);
             })
             .catch(err => {
-                debug.network(fromUrl);
-                debug.networkEnd(fromUrl, {
-                    'General': {
-                        url: fromUrl,
-                        method: 'GET',
-                        status: res.respInfo.status,
-                        query: null,
-                    },
-                    'Response Headers': headers,
-                    'Response': {
-                        Error: err
-                    }
-                });
+                // console.log(err.code, fromUrl)
+                // debug.network(fromUrl);
+                // debug.networkEnd(fromUrl, {
+                //     'General': {
+                //         url: fromUrl,
+                //         method: 'GET',
+                //         status: err.code,
+                //         query: null,
+                //     },
+                //     'Response Headers': headers,
+                //     'Response': {
+                //         Error: err
+                //     }
+                // });
             })
             .then(() => {
                 // cleanup
-                deleteFile(tmpFile)
+                deleteFile(tmpFile);
                 delete activeDownloads[toFile];
                 return toFile
             });
@@ -185,21 +188,20 @@ function runPrefetchTask(prefetcher, options) {
     if (!url) {
         return Promise.resolve();
     }
-    // if url is cacheable - cache it
-    if (isCacheable(url)) {
-        // check cache
-        return getCachedImagePath(url, options)
-            // TODO: check for expiration
-            .then(() => {})
-            // if not found download
-            .catch(() => cacheImage(url, options))
-            // allow prefetch task to fail without terminating other prefetch tasks
-            .catch(_.noop)
-            // then run next task
-            .then(() => runPrefetchTask(prefetcher, options));
+    // if url is not cacheable - get next
+    if (!isCacheable(url)) {
+        return runPrefetchTask(prefetcher, options);
     }
-    // else get next
-    return runPrefetchTask(prefetcher, options);
+    // else check cache
+    return getCachedImagePath(url, options)
+        // check for expiration
+        .then(isExpired)
+        // if not found download
+        .catch(() => cacheImage(url, options))
+        // allow prefetch task to fail without terminating other prefetch tasks
+        .catch(_.noop)
+        // then run next task
+        .then(() => runPrefetchTask(prefetcher, options));
 }
 
 function collectFilesInfo(basePath) {
@@ -234,6 +236,31 @@ function isCacheable(url) {
 }
 
 /**
+ * Check whether a url is expired by expiration date within options
+ * @param {string} filePath
+ */
+function isExpired(filePath) {
+    return MemoryCache.isExpired(filePath)
+        .then((isExpired) => {
+            if (isExpired === true) {
+                MemoryCache.remove(filePath);
+                throw new Error('File is expired');
+            }
+            return filePath;
+        })
+}
+
+/**
+ * Store file information in AsyncStorage
+ * @param url
+ * @param headers
+ */
+function setFileInfo(url, headers) {
+    let maxAge = /^max-age/.test(headers[HEADERS_CACHE_CONTROL]) ? +(headers[HEADERS_CACHE_CONTROL].split('=')[1]): null;
+    maxAge ? MemoryCache.set(url, headers, maxAge) : MemoryCache.set(url, headers)
+}
+
+/**
  * Get the local path corresponding to the given url and options.
  * @param url
  * @param options
@@ -265,15 +292,13 @@ function getCachedImagePath(url, options = defaultOptions) {
  * Download the image to the cache and return the local file path.
  * @param url
  * @param options
- * @param resolveHeaders
  * @returns {Promise.<String>}
  */
-function cacheImage(url, options = defaultOptions, resolveHeaders = defaultResolveHeaders) {
+function cacheImage(url, options = defaultOptions) {
     const filePath = getCachedImageFilePath(url, options);
     const dirPath = getDirPath(filePath);
     return ensurePath(dirPath)
-        .then(() => resolveHeaders())
-        .then(headers => downloadImage(url, filePath, headers));
+        .then(() => downloadImage(url, filePath, options.source && options.source.headers));
 }
 
 /**
@@ -284,6 +309,7 @@ function cacheImage(url, options = defaultOptions, resolveHeaders = defaultResol
  */
 function deleteCachedImage(url, options = defaultOptions) {
     const filePath = getCachedImageFilePath(url, options);
+    MemoryCache.remove(filePath);
     return deleteFile(filePath);
 }
 
@@ -371,5 +397,6 @@ module.exports = {
     deleteMultipleCachedImages,
     clearCache,
     seedCache,
-    getCacheInfo
+    getCacheInfo,
+    isExpired,
 };

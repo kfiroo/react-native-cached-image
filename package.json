@@ -30,6 +30,7 @@
     "console-network": "^1.0.6",
     "crypto-js": "3.1.9-1",
     "lodash": "4.17.4",
+    "react-native-clcasher": "git+ssh://git@bitbucket.org/clcorpdevelopment/react-native-casher.git#aa8ead1",
     "react-native-fetch-blob": "0.10.4",
     "url-parse": "1.1.7"
   }

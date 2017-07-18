@@ -74,8 +74,16 @@ const CachedImageExample = React.createClass({
         };
     },
 
-    componentWillMount() {
-        ImageCacheProvider.cacheMultipleImages(images)
+    preloadImages() {
+        // Preload images
+        ImageCacheProvider.cacheMultipleImages(images, {
+            source: {
+                headers: {
+                    'Cache-Control': 'max-age=' + 5
+                },
+                cache: 'only-if-cached'
+            }
+        })
             .then(() => {
                 console.log('cacheMultipleImages Done');
             })
@@ -98,7 +106,13 @@ const CachedImageExample = React.createClass({
     renderRow(uri) {
         return (
             <CachedImage
-                source={{uri, cache: 'only-if-cached'}}
+                source={{
+                    uri,
+                    headers: {
+                        'Cache-Control': 'max-age=' + 5
+                    },
+                    cache: 'only-if-cached'
+                }}
                 defaultSource={loading}
                 style={styles.image}
             />
@@ -120,13 +134,28 @@ const CachedImageExample = React.createClass({
                         color="#2ce7cc"
                     />
                 </View>
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this.renderRow}
-                    initialListSize={1}
-                />
+                {this.state.start ? (
+                    <ListView
+                        dataSource={this.state.dataSource}
+                        renderRow={this.renderRow}
+                        initialListSize={1}
+                    />
+                ) : (
+                    <View>
+                        <Button
+                            onPress={() => this.preloadImages()}
+                            title="Preload and cache for 5 sec"
+                            color="#6f97e5"
+                        />
+                        <Button
+                            onPress={() => this.setState({start: true})}
+                            title="Render"
+                            color="#6f97e5"
+                        />
+                    </View>
+                )}
             </View>
-        );
+        )
     }
 });
 
