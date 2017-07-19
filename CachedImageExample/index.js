@@ -14,10 +14,26 @@ const {
     ListView
 } = ReactNative;
 
-const CachedImage = require('react-native-cached-image');
+const CachedImageBase = require('react-native-cached-image');
 const {
     ImageCacheProvider
-} = CachedImage;
+} = CachedImageBase;
+
+const cachedImageOptions = {
+    cacheLocation: ImageCacheProvider.LOCATION.BUNDLE,
+    source: {
+        headers: {
+            'Cache-Control': 'max-age=' + 5
+        },
+        cache: 'only-if-cached'
+    }
+};
+
+function CachedImage(props) {
+    return (
+        <CachedImageBase {...props} {...cachedImageOptions} />
+    );
+}
 
 const {
     width
@@ -75,15 +91,7 @@ const CachedImageExample = React.createClass({
     },
 
     preloadImages() {
-        // Preload images
-        ImageCacheProvider.cacheMultipleImages(images, {
-            source: {
-                headers: {
-                    'Cache-Control': 'max-age=' + 5
-                },
-                cache: 'only-if-cached'
-            }
-        })
+        ImageCacheProvider.cacheMultipleImages(images, cachedImageOptions)
             .then(() => {
                 console.log('cacheMultipleImages Done');
             })
@@ -93,12 +101,13 @@ const CachedImageExample = React.createClass({
     },
 
     clearCache() {
-        ImageCacheProvider.clearCache();
+        ImageCacheProvider.clearCache(cachedImageOptions);
     },
 
     getCacheInfo() {
-        ImageCacheProvider.getCacheInfo()
+        ImageCacheProvider.getCacheInfo(cachedImageOptions)
             .then(({size, files}) => {
+                // console.log(size, files);
                 ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
     },
