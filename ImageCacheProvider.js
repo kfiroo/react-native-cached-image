@@ -131,7 +131,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
                 }
                 // The download is complete and rename the temporary file
                 setFileInfo(toFile, headers);
-                return fs.mv(tmpFile, toFile);
+                return fs.mv(tmpFile, toFile).catch(Promise.resolve);
             })
             .then(() => {
                 // cleanup
