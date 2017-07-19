@@ -107,6 +107,7 @@ const CachedImageExample = React.createClass({
     getCacheInfo() {
         ImageCacheProvider.getCacheInfo(cachedImageOptions)
             .then(({size, files}) => {
+                // console.log(size, files);
                 ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
     },
