@@ -17,7 +17,7 @@ We use [`react-native-fetch-blob`](https://github.com/wkh237/react-native-fetch-
 _You should only have to do this once._
 
     react-native link react-native-fetch-blob
-    
+
 Or, if you want to add Android permissions to AndroidManifest.xml automatically, use this one:
 
     RNFB_ANDROID_PERMISSIONS=true react-native link react-native-fetch-blob
@@ -51,6 +51,9 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
 * `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
 * `resolveHeaders` - _function_ when provided, the returned object will be used as the headers object when sending the request to download the image. **(default: () => Promise.resolve({}))**
 * `cacheLocation` - _string_ allows changing the root directory to use for caching. The default directory is sufficient for most use-cases. Images in this directory may be purged by Android automatically to free up space. Use `ImageCacheProvider.LOCATION.BUNDLE` if the cached images are critical (you will have to manage cleanup manually). **(default: ImageCacheProvider.LOCATION.CACHE)**
+* `loadingIndicator` - _component_ prop to set custom `ActivityIndicator`.
+* `fallbackSource` - prop to set placeholder image. when `source.uri` is null or cached failed, the `fallbackSource` will be display.
+
 
 ### ImageCacheProvider
 `ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
@@ -109,7 +112,10 @@ Deletes the underlying cached image for a given url.
 Cache a list of urls, if any of the urls is already cached will not try to download again.
 
 #### `ImageCacheProvider.deleteMultipleCachedImages(urls: string[], options: CacheOptions): Promise`
-Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing
+Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing.
+
+### `ImageCacheProvider.clearCache(): Promise`
+Deletes all cached images.
 
 #### Dependencies
 - [lodash](https://github.com/lodash/lodash) for props handling
