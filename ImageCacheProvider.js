@@ -1,7 +1,6 @@
 'use strict';
 
 const _ = require('lodash');
-// const debug = require('console-network');
 const MemoryCache = require('react-native-clcasher/MemoryCache').default;
 const RNFetchBlob = require('react-native-fetch-blob').default;
 
@@ -123,20 +122,6 @@ function downloadImage(fromUrl, toFile, headers = {}) {
             .config({path: tmpFile})
             .fetch('GET', fromUrl, headers)
             .then(res => {
-                // console.log(res.respInfo.status, fromUrl)
-                // debug.network(fromUrl);
-                // debug.networkEnd(fromUrl, {
-                //     'General': {
-                //         url: fromUrl,
-                //         method: 'GET',
-                //         status: res.respInfo.status,
-                //         query: null,
-                //     },
-                //     'Response Headers': headers,
-                //     'Response': {
-                //         Raw: toFile
-                //     }
-                // });
                 if (res.respInfo.status === 304) {
                     return Promise.resolve(toFile);
                 }
@@ -147,22 +132,6 @@ function downloadImage(fromUrl, toFile, headers = {}) {
                 // The download is complete and rename the temporary file
                 setFileInfo(toFile, headers);
                 return fs.mv(tmpFile, toFile);
-            })
-            .catch(err => {
-                // console.log(err.code, fromUrl)
-                // debug.network(fromUrl);
-                // debug.networkEnd(fromUrl, {
-                //     'General': {
-                //         url: fromUrl,
-                //         method: 'GET',
-                //         status: err.code,
-                //         query: null,
-                //     },
-                //     'Response Headers': headers,
-                //     'Response': {
-                //         Error: err
-                //     }
-                // });
             })
             .then(() => {
                 // cleanup
