@@ -47,7 +47,8 @@ const CachedImage = React.createClass({
             React.PropTypes.bool,
             React.PropTypes.array
         ]).isRequired,
-        resolveHeaders: React.PropTypes.func
+        resolveHeaders: React.PropTypes.func,
+        cacheLocation: React.PropTypes.string
     },
 
     getDefaultProps() {
@@ -55,7 +56,8 @@ const CachedImage = React.createClass({
             renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false,
-            resolveHeaders: () => Promise.resolve({})
+            resolveHeaders: () => Promise.resolve({}),
+            cacheLocation: ImageCacheProvider.LOCATION.CACHE
         };
     },
 
@@ -117,7 +119,8 @@ const CachedImage = React.createClass({
     processSource(source) {
         const url = _.get(source, ['uri'], null);
         if (ImageCacheProvider.isCacheable(url)) {
-            const options = _.pick(this.props, ['useQueryParamsInCacheKey', 'cacheGroup']);
+            const options = _.pick(this.props, ['useQueryParamsInCacheKey', 'cacheGroup', 'cacheLocation']);
+
             // try to get the image path from cache
             ImageCacheProvider.getCachedImagePath(url, options)
                 // try to put the image in cache if
