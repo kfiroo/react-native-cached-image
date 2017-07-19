@@ -319,25 +319,25 @@ function seedCache(local, url, options = defaultOptions) {
 
 /**
  * Clear the entire cache.
- * @param cacheLocation
+ * @param options
  * @returns {Promise}
  */
-function clearCache(cacheLocation) {
-    return fs.unlink(getBaseDir(cacheLocation))
+function clearCache(options = defaultOptions) {
+    return fs.unlink(getBaseDir(options.cacheLocation))
         .catch(() => {
             // swallow exceptions if path doesn't exist
         })
-        .then(() => ensurePath(getBaseDir(cacheLocation)));
+        .then(() => ensurePath(getBaseDir(options.cacheLocation)));
 }
 
 /**
  * Return info about the cache, list of files and the total size of the cache.
- * @param cacheLocation
+ * @param options
  * @returns {Promise.<{size}>}
  */
-function getCacheInfo(cacheLocation) {
-    return ensurePath(getBaseDir(cacheLocation))
-        .then(() => collectFilesInfo(getBaseDir(cacheLocation)))
+function getCacheInfo(options = defaultOptions) {
+    return ensurePath(getBaseDir(options.cacheLocation))
+        .then(() => collectFilesInfo(getBaseDir(options.cacheLocation)))
         .then(cache => {
             const files = _.flattenDeep(cache);
             const size = _.sumBy(files, 'size');
