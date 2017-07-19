@@ -50,8 +50,10 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
 * `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)**
 * `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
 * `resolveHeaders` - _function_ when provided, the returned object will be used as the headers object when sending the request to download the image. **(default: () => Promise.resolve({}))**
+* `cacheLocation` - _string_ allows changing the root directory to use for caching. The default directory is sufficient for most use-cases. Images in this directory may be purged by Android automatically to free up space. Use `ImageCacheProvider.LOCATION.BUNDLE` if the cached images are critical (you will have to manage cleanup manually). **(default: ImageCacheProvider.LOCATION.CACHE)**
 * `loadingIndicator` - _component_ prop to set custom `ActivityIndicator`.
 * `fallbackSource` - prop to set placeholder image. when `source.uri` is null or cached failed, the `fallbackSource` will be display.
+
 
 ### ImageCacheProvider
 `ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
@@ -80,9 +82,10 @@ ImageCacheProvider.deleteMultipleCachedImages([
 
 #### `type: CacheOptions`
 ```
-type ReadDirItem = {
+type CacheOptions = {
   useQueryParamsInCacheKey: string[]|bool; // same as the CachedImage props
   cacheGroup: string; // the directory to save cached images in, defaults to the url hostname
+  cacheLocation: string; // the root directory to use for caching, corresponds to CachedImage prop of same name, defaults to system cache directory
 };
 ```
 
