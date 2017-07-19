@@ -36,14 +36,16 @@ const styles = StyleSheet.create({
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage']);
+    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'renderImageBackground', 'renderLoader', 'renderError']);
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
 
 const CachedImage = React.createClass({
     propTypes: {
-        renderImage: React.PropTypes.func.isRequired,
+        renderImage: React.PropTypes.func,
+        renderLoader: React.PropTypes.func,
+        renderError: React.PropTypes.func,
         activityIndicatorProps: React.PropTypes.object.isRequired,
         useQueryParamsInCacheKey: React.PropTypes.oneOfType([
             React.PropTypes.bool,
@@ -51,16 +53,18 @@ const CachedImage = React.createClass({
         ]).isRequired,
     },
 
-    getDefaultProps() {
+    getDefaultProps(){
         return {
-            renderImage: props => ImageBackground ? (
-                <ImageBackground ref={CACHED_IMAGE_REF} {...props}/>
-            ) : (
-                <Image ref={CACHED_IMAGE_REF} {...props}/>
-            ),
+            renderImage: props => {
+                return (<Image ref={CACHED_IMAGE_REF} {...props}/>)
+            },
+            renderImageBackground: props => {
+                let Img = (ImageBackground || Image);
+                return (<Img {...props}/>);
+            },
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false,
-        };
+        }
     },
 
     setNativeProps(nativeProps) {
@@ -121,6 +125,7 @@ const CachedImage = React.createClass({
 
     processSource(source) {
         const url = typeof source === 'string' ? source : _.get(source, ['uri'], null);
+
         if (ImageCacheProvider.isCacheable(url)) {
             const options = _.pick(this.props, ['useQueryParamsInCacheKey', 'cacheGroup', 'source']);
             // try to get the image path from cache
@@ -140,7 +145,7 @@ const CachedImage = React.createClass({
                     this.safeSetState({
                         cachedImagePath: null,
                         isCacheable: false,
-                        errorLoading: true,
+                        errorLoading: err,
                     });
                 });
             this.safeSetState({
@@ -158,13 +163,14 @@ const CachedImage = React.createClass({
             return this.renderLoader();
         }
         if( this.state.errorLoading ) {
-            return this.renderError();
+            return this.renderError(this.state.errorLoading);
         }
         const props = getImageProps(this.props);
         const style = this.props.style || styles.image;
         const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
                 uri: 'file://' + this.state.cachedImagePath
             } : this.props.source;
+
         if (this.props.fallbackSource && !this.state.cachedImagePath) {
           return this.props.renderImage({
               ...props,
@@ -209,7 +215,7 @@ const CachedImage = React.createClass({
             );
         }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
-        return this.props.renderImage({
+        return this.props.renderImageBackground({
             ...imageProps,
             style: imageStyle,
             key: source.uri,
@@ -226,15 +232,16 @@ const CachedImage = React.createClass({
         });
     },
 
-    renderError() {
+    renderError(err) {
         const imageStyle = [this.props.style, styles.loaderPlaceholder];
         const activityIndicatorStyle = this.props.activityIndicatorProps.style || styles.loader;
         return (
             <View style={[imageStyle, activityIndicatorStyle]}>
-                <Text>Error</Text>
+                <Text>{err.code} {err.message}</Text>
             </View>
         );
-    }
+    },
+
 });
 
 /**

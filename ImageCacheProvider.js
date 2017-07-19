@@ -127,7 +127,7 @@ function downloadImage(fromUrl, toFile, headers = {}) {
                 }
                 let status = Math.floor(res.respInfo.status / 100);
                 if (status !== 2) {
-                    throw new Error(res.respInfo.status + ' Failed to successfully download image');
+                    throw {message: res.respInfo.statusText || 'Failed to successfully download image', code: res.respInfo.status};
                 }
                 // The download is complete and rename the temporary file
                 setFileInfo(toFile, headers);
