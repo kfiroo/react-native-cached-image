@@ -138,10 +138,13 @@ function downloadImage(fromUrl, toFile, headers = {}) {
                 .config({path: tmpFile})
                 .fetch('GET', fromUrl, headers)
                 .then(res => {
-                    if (Math.floor(res.respInfo.status / 100) !== 2) {
+                    const successfulResponse = Math.floor(res.respInfo.status / 100) === 2;
+                    const cachedResponse = res.respInfo.status === 304;
+                    // check for error responses (not 2** or 304)
+                    if (!(successfulResponse || cachedResponse)) {
                         throw new Error('Failed to successfully download image');
                     }
-                    //The download is complete and rename the temporary file
+                    // The download is complete and rename the temporary file
                     return fs.mv(tmpFile, toFile);
                 })
                 .then(() => resolve(toFile))
