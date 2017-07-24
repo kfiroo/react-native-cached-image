@@ -56,6 +56,7 @@ const loading = require('./loading.jpg');
 
 const images = [
     'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
+    'https://i.ytimg.com/vi/b6m-XlOxjbk/hqdefault.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/wrong-image.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/cheeseburger-full.jpg',
@@ -106,6 +107,16 @@ const CachedImageExample = React.createClass({
             });
     },
 
+    cacheImages() {
+        this.setState({
+            dataSource: this.state.dataSource.cloneWithRows([])
+        }, () => {
+            this.setState({
+                dataSource: this.state.dataSource.cloneWithRows(images)
+            });
+        });
+    },
+
     renderRow(uri) {
         return (
             <CachedImage
@@ -130,10 +141,16 @@ const CachedImageExample = React.createClass({
                         title="Cache Info"
                         color="#2ce7cc"
                     />
+                    <Button
+                        onPress={this.cacheImages}
+                        title="Cache Images"
+                        color="#826fe5"
+                    />
                 </View>
                 <ListView
                     dataSource={this.state.dataSource}
                     renderRow={this.renderRow}
+                    enableEmptySections={true}
                 />
             </View>
         );
