@@ -9,6 +9,7 @@ const ImageCacheProvider = require('./ImageCacheProvider');
 const {
     View,
     Image,
+    ImageBackground,
     ActivityIndicator,
     NetInfo,
     Platform
@@ -53,7 +54,9 @@ const CachedImage = React.createClass({
 
     getDefaultProps() {
         return {
-            renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
+            renderImage: props => ImageBackground ?
+                (<ImageBackground ref={CACHED_IMAGE_REF} {...props}/>) :
+                (<Image ref={CACHED_IMAGE_REF} {...props}/>),
             activityIndicatorProps: {},
             useQueryParamsInCacheKey: false,
             resolveHeaders: () => Promise.resolve({}),
