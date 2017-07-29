@@ -1,5 +1,22 @@
 'use strict';
 
+/*
+
+file system
+- getFileInfo
+- ensurePath
+-
+
+cache
+- getCachedImageFilePath
+- getCachedImagePath
+
+ */
+// file system
+// cache
+// task runner
+
+
 const _ = require('lodash');
 
 const RNFetchBlob = require('react-native-fetch-blob').default;
