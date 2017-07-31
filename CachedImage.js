@@ -38,6 +38,7 @@ function getImageProps(props) {
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
+let _isMounted = false;
 
 class CachedImage extends React.Component {
     static propTypes = {
@@ -59,14 +60,16 @@ class CachedImage extends React.Component {
         cacheLocation: ImageCacheProvider.LOCATION.CACHE
     };
 
+    
+
     constructor(props) {
         super(props);
 
         this.state = {
-        isMounted: false,
-        isCacheable: false,
-        cachedImagePath: null,
-        networkAvailable: true
+            isMounted: false,
+            isCacheable: false,
+            cachedImagePath: null,
+            networkAvailable: true
         };
     }
 
@@ -79,14 +82,16 @@ class CachedImage extends React.Component {
     }
 
     safeSetState(newState) {
-        if (!this.state.isMounted) {
+        if (!_isMounted) {
             return;
         }
+
         return this.setState(newState);
     }
 
     componentWillMount() {
-        this.setState({ isMounted: true });
+        //this.setState({ isMounted: true });
+        _isMounted = true;
         NetInfo.isConnected.addEventListener('change', this.handleConnectivityChange.bind(this));
         // initial
         NetInfo.isConnected.fetch()
@@ -100,7 +105,8 @@ class CachedImage extends React.Component {
     }
 
     componentWillUnmount() {
-        this.setState({ isMounted: false });
+        //this.setState({ isMounted: false });
+        _isMounted = false;
         NetInfo.isConnected.removeEventListener('change', this.handleConnectivityChange.bind(this));
     }
 
