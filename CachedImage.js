@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const React = require('react');
 const ReactNative = require('react-native');
+const PropTypes= require('prop-types');
 const flattenStyle = ReactNative.StyleSheet.flatten;
 const ImageCacheProvider = require('./ImageCacheProvider');
 
@@ -41,27 +42,6 @@ const CACHED_IMAGE_REF = 'cachedImage';
 let _isMounted = false;
 
 class CachedImage extends React.Component {
-    static propTypes = {
-        renderImage: React.PropTypes.func.isRequired,
-        activityIndicatorProps: React.PropTypes.object.isRequired,
-        useQueryParamsInCacheKey: React.PropTypes.oneOfType([
-            React.PropTypes.bool,
-            React.PropTypes.array
-        ]).isRequired,
-        resolveHeaders: React.PropTypes.func,
-        cacheLocation: React.PropTypes.string
-    }
-
-    static defaultProps = {
-        renderImage: props => <Image ref={CACHED_IMAGE_REF} {...props} />,
-        activityIndicatorProps: {},
-        useQueryParamsInCacheKey: false,
-        resolveHeaders: () => Promise.resolve({}),
-        cacheLocation: ImageCacheProvider.LOCATION.CACHE
-    };
-
-    
-
     constructor(props) {
         super(props);
 
@@ -222,6 +202,25 @@ class CachedImage extends React.Component {
         });
     }
 }
+
+CachedImage.propTypes = {
+    renderImage: PropTypes.func.isRequired,
+    activityIndicatorProps: PropTypes.object.isRequired,
+    useQueryParamsInCacheKey: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.array
+    ]).isRequired,
+    resolveHeaders: PropTypes.func,
+    cacheLocation: PropTypes.string
+};
+
+CachedImage.defaultProps = {
+    renderImage: props => <Image ref={CACHED_IMAGE_REF} {...props} />,
+    activityIndicatorProps: {},
+    useQueryParamsInCacheKey: false,
+    resolveHeaders: () => Promise.resolve({}),
+    cacheLocation: ImageCacheProvider.LOCATION.CACHE
+};
 
 /**
  * Same as ReactNaive.Image.getSize only it will not download the image if it has a cached version
