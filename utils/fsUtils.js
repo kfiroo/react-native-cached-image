@@ -62,6 +62,9 @@ function collectFilesInfo(basePath) {
         });
 }
 
+/**
+ * wrapper around common filesystem actions
+ */
 module.exports = {
 
     /**
@@ -108,7 +111,7 @@ module.exports = {
                     })
                     .then(() => {
                         // cleanup
-                        deleteFile(tmpFile);
+                        this.deleteFile(tmpFile);
                         delete activeDownloads[toFile];
                         return toFile;
                     })
