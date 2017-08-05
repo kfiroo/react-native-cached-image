@@ -1,7 +1,8 @@
 'use strict';
 
 const _ = require('lodash');
-const React = require('react');
+const PropTypes = require('prop-types');
+const createReactClass = require('create-react-class');
 const ReactNative = require('react-native');
 const flattenStyle = ReactNative.StyleSheet.flatten;
 const ImageCacheProvider = require('./ImageCacheProvider');
@@ -39,16 +40,16 @@ function getImageProps(props) {
 
 const CACHED_IMAGE_REF = 'cachedImage';
 
-const CachedImage = React.createClass({
+const CachedImage = createReactClass({
     propTypes: {
-        renderImage: React.PropTypes.func.isRequired,
-        activityIndicatorProps: React.PropTypes.object.isRequired,
-        useQueryParamsInCacheKey: React.PropTypes.oneOfType([
-            React.PropTypes.bool,
-            React.PropTypes.array
+        renderImage: PropTypes.func.isRequired,
+        activityIndicatorProps: PropTypes.object.isRequired,
+        useQueryParamsInCacheKey: PropTypes.oneOfType([
+            PropTypes.bool,
+            PropTypes.array
         ]).isRequired,
-        resolveHeaders: React.PropTypes.func,
-        cacheLocation: React.PropTypes.string
+        resolveHeaders: PropTypes.func,
+        cacheLocation: PropTypes.string
     },
 
     getDefaultProps() {
