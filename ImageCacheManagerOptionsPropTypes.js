@@ -10,4 +10,5 @@ module.exports = {
         PropTypes.arrayOf(PropTypes.string)
     ]),
     cacheLocation: PropTypes.string,
+    allowSelfSignedSSL: PropTypes.bool
 };

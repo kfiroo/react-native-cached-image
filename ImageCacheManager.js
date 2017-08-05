@@ -11,7 +11,8 @@ const defaultDefaultOptions = {
     headers: {},
     ttl: 60 * 60 * 24 * 14, // 2 weeks
     useQueryParamsInCacheKey: false,
-    cacheLocation: fsUtils.getCacheDir()
+    cacheLocation: fsUtils.getCacheDir(),
+    allowSelfSignedSSL: false,
 };
 
 module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache) => {
