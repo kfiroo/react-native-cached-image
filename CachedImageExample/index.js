@@ -20,12 +20,18 @@ const {
 } = CachedImageBase;
 
 const cachedImageOptions = {
-    cacheLocation: ImageCacheProvider.LOCATION.BUNDLE
+    cacheLocation: ImageCacheProvider.LOCATION.BUNDLE,
+    source: {
+        headers: {
+            'Cache-Control': 'max-age=' + 5
+        },
+        cache: 'only-if-cached'
+    }
 };
 
 function CachedImage(props) {
     return (
-        <CachedImageBase {...props} {...cachedImageOptions} />
+        <CachedImageBase {...cachedImageOptions} {...props} />
     );
 }
 
@@ -55,6 +61,7 @@ const styles = StyleSheet.create({
 const loading = require('./loading.jpg');
 
 const images = [
+    'https://images.unsplash.com/photo-1494783367193-149034c05e8f?.jpg',
     'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/wrong-image.jpg',
     'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
@@ -75,7 +82,6 @@ function formatBytes(bytes, decimals) {
 }
 
 const CachedImageExample = React.createClass({
-
     getInitialState() {
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
         return {
@@ -84,7 +90,7 @@ const CachedImageExample = React.createClass({
         };
     },
 
-    componentWillMount() {
+    preloadImages() {
         ImageCacheProvider.cacheMultipleImages(images, cachedImageOptions)
             .then(() => {
                 console.log('cacheMultipleImages Done');
@@ -109,7 +115,13 @@ const CachedImageExample = React.createClass({
     renderRow(uri) {
         return (
             <CachedImage
-                source={{uri}}
+                source={{
+                    uri,
+                    headers: {
+                        'Cache-Control': 'max-age=' + 5
+                    },
+                    cache: 'only-if-cached'
+                }}
                 defaultSource={loading}
                 style={styles.image}
             />
@@ -131,12 +143,28 @@ const CachedImageExample = React.createClass({
                         color="#2ce7cc"
                     />
                 </View>
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this.renderRow}
-                />
+                {this.state.start ? (
+                    <ListView
+                        dataSource={this.state.dataSource}
+                        renderRow={this.renderRow}
+                        initialListSize={1}
+                    />
+                ) : (
+                    <View>
+                        <Button
+                            onPress={() => this.preloadImages()}
+                            title="Preload and cache for 5 sec"
+                            color="#6f97e5"
+                        />
+                        <Button
+                            onPress={() => this.setState({start: true})}
+                            title="Render"
+                            color="#6f97e5"
+                        />
+                    </View>
+                )}
             </View>
-        );
+        )
     }
 });
 
