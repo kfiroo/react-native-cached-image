@@ -159,7 +159,8 @@ class CachedImageExample extends React.Component {
                 <ImageCacheProvider
                     urlsToPreload={images}
                     onPreloadComplete={() => ReactNative.Alert.alert('onPreloadComplete')}
-                    ttl={60}>
+                    ttl={60}
+                    numberOfConcurrentPreloads={0}>
                     <ListView
                         dataSource={this.state.dataSource}
                         renderRow={this.renderRow}
