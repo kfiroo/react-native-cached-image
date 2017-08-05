@@ -74,15 +74,16 @@ function formatBytes(bytes, decimals) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-const CachedImageExample = React.createClass({
+class CachedImageExample extends React.Component {
+    constructor(props) {
+        super(props);
 
-    getInitialState() {
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-        return {
+        this.state = {
             showNextImage: false,
             dataSource: ds.cloneWithRows(images)
         };
-    },
+    }
 
     componentWillMount() {
         ImageCacheProvider.cacheMultipleImages(images, cachedImageOptions)
@@ -92,11 +93,11 @@ const CachedImageExample = React.createClass({
             .catch(err => {
                 console.log('cacheMultipleImages caught an error: ', err);
             });
-    },
+    }
 
     clearCache() {
         ImageCacheProvider.clearCache(cachedImageOptions);
-    },
+    }
 
     getCacheInfo() {
         ImageCacheProvider.getCacheInfo(cachedImageOptions)
@@ -104,7 +105,7 @@ const CachedImageExample = React.createClass({
                 // console.log(size, files);
                 ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
-    },
+    }
 
     renderRow(uri) {
         return (
@@ -114,7 +115,7 @@ const CachedImageExample = React.createClass({
                 style={styles.image}
             />
         );
-    },
+    }
 
     render() {
         return (
@@ -138,6 +139,6 @@ const CachedImageExample = React.createClass({
             </View>
         );
     }
-});
+}
 
 AppRegistry.registerComponent('CachedImageExample', () => CachedImageExample);

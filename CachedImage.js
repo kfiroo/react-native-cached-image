@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const React = require('react');
 const ReactNative = require('react-native');
+const PropTypes= require('prop-types');
 const flattenStyle = ReactNative.StyleSheet.flatten;
 const ImageCacheProvider = require('./ImageCacheProvider');
 
@@ -38,28 +39,19 @@ function getImageProps(props) {
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
+let _isMounted = false;
 
-const CachedImage = React.createClass({
-    propTypes: {
-        renderImage: React.PropTypes.func.isRequired,
-        activityIndicatorProps: React.PropTypes.object.isRequired,
-        useQueryParamsInCacheKey: React.PropTypes.oneOfType([
-            React.PropTypes.bool,
-            React.PropTypes.array
-        ]).isRequired,
-        resolveHeaders: React.PropTypes.func,
-        cacheLocation: React.PropTypes.string
-    },
+class CachedImage extends React.Component {
+    constructor(props) {
+        super(props);
 
-    getDefaultProps() {
-        return {
-            renderImage: props => (<Image ref={CACHED_IMAGE_REF} {...props}/>),
-            activityIndicatorProps: {},
-            useQueryParamsInCacheKey: false,
-            resolveHeaders: () => Promise.resolve({}),
-            cacheLocation: ImageCacheProvider.LOCATION.CACHE
+        this.state = {
+            isMounted: false,
+            isCacheable: false,
+            cachedImagePath: null,
+            networkAvailable: true
         };
-    },
+    }
 
     setNativeProps(nativeProps) {
         try {
@@ -67,27 +59,20 @@ const CachedImage = React.createClass({
         } catch (e) {
             console.error(e);
         }
-    },
-
-    getInitialState() {
-        this._isMounted = false;
-        return {
-            isCacheable: false,
-            cachedImagePath: null,
-            networkAvailable: true
-        };
-    },
+    }
 
     safeSetState(newState) {
-        if (!this._isMounted) {
+        if (!_isMounted) {
             return;
         }
+
         return this.setState(newState);
-    },
+    }
 
     componentWillMount() {
-        this._isMounted = true;
-        NetInfo.isConnected.addEventListener('change', this.handleConnectivityChange);
+        //this.setState({ isMounted: true });
+        _isMounted = true;
+        NetInfo.isConnected.addEventListener('change', this.handleConnectivityChange.bind(this));
         // initial
         NetInfo.isConnected.fetch()
             .then(isConnected => {
@@ -97,24 +82,25 @@ const CachedImage = React.createClass({
             });
 
         this.processSource(this.props.source);
-    },
+    }
 
     componentWillUnmount() {
-        this._isMounted = false;
-        NetInfo.isConnected.removeEventListener('change', this.handleConnectivityChange);
-    },
+        //this.setState({ isMounted: false });
+        _isMounted = false;
+        NetInfo.isConnected.removeEventListener('change', this.handleConnectivityChange.bind(this));
+    }
 
     componentWillReceiveProps(nextProps) {
         if (!_.isEqual(this.props.source, nextProps.source)) {
             this.processSource(nextProps.source);
         }
-    },
+    }
 
     handleConnectivityChange(isConnected) {
         this.safeSetState({
             networkAvailable: isConnected
         });
-    },
+    }
 
     processSource(source) {
         const url = _.get(source, ['uri'], null);
@@ -144,7 +130,7 @@ const CachedImage = React.createClass({
                 isCacheable: false
             });
         }
-    },
+    }
 
     render() {
         if (this.state.isCacheable && !this.state.cachedImagePath) {
@@ -169,7 +155,7 @@ const CachedImage = React.createClass({
             style,
             source
         });
-    },
+    }
 
     renderLoader() {
         const imageProps = getImageProps(this.props);
@@ -215,7 +201,26 @@ const CachedImage = React.createClass({
             )
         });
     }
-});
+}
+
+CachedImage.propTypes = {
+    renderImage: PropTypes.func.isRequired,
+    activityIndicatorProps: PropTypes.object.isRequired,
+    useQueryParamsInCacheKey: PropTypes.oneOfType([
+        PropTypes.bool,
+        PropTypes.array
+    ]).isRequired,
+    resolveHeaders: PropTypes.func,
+    cacheLocation: PropTypes.string
+};
+
+CachedImage.defaultProps = {
+    renderImage: props => <Image ref={CACHED_IMAGE_REF} {...props} />,
+    activityIndicatorProps: {},
+    useQueryParamsInCacheKey: false,
+    resolveHeaders: () => Promise.resolve({}),
+    cacheLocation: ImageCacheProvider.LOCATION.CACHE
+};
 
 /**
  * Same as ReactNaive.Image.getSize only it will not download the image if it has a cached version
