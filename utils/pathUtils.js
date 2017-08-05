@@ -48,6 +48,9 @@ function getCachePath(url) {
     return host.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 
+/**
+ * handle the resolution of URLs to local file paths
+ */
 module.exports = {
 
     /**
