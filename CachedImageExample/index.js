@@ -72,26 +72,31 @@ function formatBytes(bytes, decimals) {
 
 const defaultImageCacheManager = ImageCacheManager();
 
-const CachedImageExample = React.createClass({
+class CachedImageExample extends React.Component {
 
-    getInitialState() {
+    constructor(props) {
+        super(props);
+
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-        return {
+        this.state = {
             showNextImage: false,
             dataSource: ds.cloneWithRows(images)
         };
-    },
+
+        this.cacheImages = this.cacheImages.bind(this);
+
+    }
 
     componentWillMount() {
         defaultImageCacheManager.downloadAndCacheUrl(image1);
-    },
+    }
 
     clearCache() {
         defaultImageCacheManager.clearCache()
             .then(() => {
                 ReactNative.Alert.alert('Cache cleared');
             });
-    },
+    }
 
     getCacheInfo() {
         defaultImageCacheManager.getCacheInfo()
@@ -99,7 +104,7 @@ const CachedImageExample = React.createClass({
                 // console.log(size, files);
                 ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
-    },
+    }
 
     cacheImages() {
         this.setState({
@@ -109,7 +114,7 @@ const CachedImageExample = React.createClass({
                 dataSource: this.state.dataSource.cloneWithRows(images)
             });
         });
-    },
+    }
 
     renderRow(uri) {
         return (
@@ -119,7 +124,7 @@ const CachedImageExample = React.createClass({
                 style={styles.image}
             />
         );
-    },
+    }
 
     render() {
         return (
@@ -164,6 +169,7 @@ const CachedImageExample = React.createClass({
             </ScrollView>
         );
     }
-});
+
+}
 
 AppRegistry.registerComponent('CachedImageExample', () => CachedImageExample);

@@ -11,8 +11,8 @@ const ImageCacheManagerOptionsPropTypes = require('./ImageCacheManagerOptionsPro
 const ImageCacheManager = require('./ImageCacheManager');
 const ImageCachePreloader = require('./ImageCachePreloader');
 
-const ImageCacheProvider = React.createClass({
-    propTypes: {
+class ImageCacheProvider extends React.Component {
+    static propTypes = {
         // only a single child so we can render it
         children: PropTypes.element.isRequired,
 
@@ -24,23 +24,26 @@ const ImageCacheProvider = React.createClass({
         numberOfConcurrentPreloads: PropTypes.number.isRequired,
 
         onPreloadComplete: PropTypes.func.isRequired,
-    },
+    };
 
-    childContextTypes: {
+    static defaultProps = {
+        urlsToPreload: [],
+        numberOfConcurrentPreloads: 0,
+        onPreloadComplete: _.noop,
+    };
+
+    static childContextTypes = {
         getImageCacheManager: PropTypes.func,
-    },
+    };
 
-    getImageCacheManagerOptions() {
-        return _.pick(this.props, _.keys(ImageCacheManagerOptionsPropTypes));
-    },
+    constructor(props) {
+        super(props);
 
-    getImageCacheManager() {
-        if (!this.imageCacheManager) {
-            const options = this.getImageCacheManagerOptions();
-            this.imageCacheManager = ImageCacheManager(options);
-        }
-        return this.imageCacheManager;
-    },
+        this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
+        this.getImageCacheManager = this.getImageCacheManager.bind(this);
+        this.preloadImages = this.preloadImages.bind(this);
+
+    }
 
     getChildContext() {
         const self = this;
@@ -49,19 +52,11 @@ const ImageCacheProvider = React.createClass({
                 return self.getImageCacheManager();
             }
         };
-    },
-
-    getDefaultProps() {
-        return {
-            urlsToPreload: [],
-            numberOfConcurrentPreloads: 0,
-            onPreloadComplete: _.noop,
-        };
-    },
+    }
 
     componentWillMount() {
         this.preloadImages();
-    },
+    }
 
     componentWillReceiveProps(nextProps) {
         // reset imageCacheManager in case any option changed
@@ -70,17 +65,30 @@ const ImageCacheProvider = React.createClass({
         if (this.props.urlsToPreload !== nextProps.urlsToPreload) {
             this.preloadImages();
         }
-    },
+    }
+
+    getImageCacheManagerOptions() {
+        return _.pick(this.props, _.keys(ImageCacheManagerOptionsPropTypes));
+    }
+
+    getImageCacheManager() {
+        if (!this.imageCacheManager) {
+            const options = this.getImageCacheManagerOptions();
+            this.imageCacheManager = ImageCacheManager(options);
+        }
+        return this.imageCacheManager;
+    }
 
     preloadImages() {
         const imageCacheManager = this.getImageCacheManager();
         ImageCachePreloader.preloadImages(this.props.urlsToPreload, imageCacheManager, this.props.numberOfConcurrentPreloads)
             .then(() => this.props.onPreloadComplete());
-    },
+    }
 
     render() {
         return React.Children.only(this.props.children);
-    },
-});
+    }
+
+}
 
 module.exports = ImageCacheProvider;
