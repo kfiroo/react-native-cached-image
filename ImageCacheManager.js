@@ -120,7 +120,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
         /**
          * return info about the cache, list of files and the total size of the cache
          * @param options
-         * @returns {*|Promise.<{file: Array, size: Number}>}
+         * @returns {Promise.<{file: Array, size: Number}>}
          */
         getCacheInfo(options = {}) {
             _.defaults(options, defaultOptions);
