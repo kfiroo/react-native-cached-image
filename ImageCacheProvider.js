@@ -13,8 +13,8 @@ const ImageCachePreloader = require('./ImageCachePreloader');
 
 class ImageCacheProvider extends React.Component {
     static propTypes = {
-        // only a single child so we can render it
-        children: PropTypes.element.isRequired,
+        // only a single child so we can render it without adding a View
+        children: PropTypes.element,
 
         // ImageCacheManager options
         ...ImageCacheManagerOptionsPropTypes,
