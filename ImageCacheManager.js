@@ -15,7 +15,7 @@ const defaultDefaultOptions = {
     allowSelfSignedSSL: false,
 };
 
-module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache) => {
+module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache, fs = fsUtils, path = pathUtils) => {
 
     // apply default options
     _.defaults(defaultOptions, defaultDefaultOptions);
@@ -31,7 +31,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
         // allow CachedImage to provide custom options
         _.defaults(options, defaultOptions);
         // cacheableUrl contains only the needed query params
-        const cacheableUrl = pathUtils.getCacheableUrl(url, options.useQueryParamsInCacheKey);
+        const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
         // note: urlCache may remove the entry if it expired so we need to remove the leftover file manually
         return urlCache.get(cacheableUrl)
             .then(filePath => {
@@ -44,9 +44,9 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
             })
             // url is not found in the cache or is expired
             .catch(() => {
-                const filePath = pathUtils.getImageFilePath(cacheableUrl, options.cacheLocation);
+                const filePath = path.getImageFilePath(cacheableUrl, options.cacheLocation);
                 // remove expired file if exists
-                return fsUtils.deleteFile(filePath)
+                return fs.deleteFile(filePath)
                     // get the image to cache (download / copy / etc)
                     .then(() => getCachedFile(filePath))
                     // add to cache
@@ -68,7 +68,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
             return cacheUrl(
                 url,
                 options,
-                filePath => fsUtils.downloadFile(url, filePath, options.headers)
+                filePath => fs.downloadFile(url, filePath, options.headers)
             );
         },
 
@@ -83,7 +83,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
             return cacheUrl(
                 url,
                 options,
-                filePath => fsUtils.copyFile(seedPath, filePath)
+                filePath => fs.copyFile(seedPath, filePath)
             );
         },
 
@@ -98,12 +98,12 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
                 return Promise.reject(new Error('Url is not cacheable'));
             }
             _.defaults(options, defaultOptions);
-            const cacheableUrl = pathUtils.getCacheableUrl(url, options.useQueryParamsInCacheKey);
-            const filePath = pathUtils.getImageFilePath(cacheableUrl, options.cacheLocation);
+            const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
+            const filePath = path.getImageFilePath(cacheableUrl, options.cacheLocation);
             // remove file from cache
             return urlCache.remove(cacheableUrl)
                 // remove file from disc
-                .then(() => fsUtils.deleteFile(filePath));
+                .then(() => fs.deleteFile(filePath));
         },
 
         /**
@@ -114,7 +114,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
         clearCache(options = {}) {
             _.defaults(options, defaultOptions);
             return urlCache.flush()
-                .then(() => fsUtils.cleanDir(options.cacheLocation));
+                .then(() => fs.cleanDir(options.cacheLocation));
         },
 
         /**
@@ -124,7 +124,7 @@ module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache
          */
         getCacheInfo(options = {}) {
             _.defaults(options, defaultOptions);
-            return fsUtils.getDirInfo(options.cacheLocation);
+            return fs.getDirInfo(options.cacheLocation);
         },
 
     };
