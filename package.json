@@ -4,7 +4,21 @@
   "description": "CachedImage component for react-native",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/jest"
+  },
+  "jest": {
+    "preset": "react-native",
+    "globals": {
+      "NODE_ENV": "test"
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/CachedImageExample/"
+    ],
+    "modulePathIgnorePatterns": [
+      "/CachedImageExample/"
+    ],
+    "verbose": true
   },
   "repository": {
     "type": "git",
@@ -38,5 +52,16 @@
     "react-native-clcasher": "1.0.0",
     "react-native-fetch-blob": "0.10.8",
     "url-parse": "1.1.9"
+  },
+  "devDependencies": {
+    "babel-jest": "^20.0.3",
+    "babel-preset-react-native": "^2.1.0",
+    "jest": "^20.0.4",
+    "jest-react-native": "^18.0.0",
+    "react": "16.0.0-alpha.12",
+    "react-native": "^0.47.1",
+    "react-test-renderer": "^15.6.1",
+    "regenerator-runtime": "^0.10.5",
+    "babel-preset-env": "*"
   }
 }
