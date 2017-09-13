@@ -4,18 +4,17 @@ const _ = require('lodash');
 
 const fsUtils = require('./utils/fsUtils');
 const pathUtils = require('./utils/pathUtils');
-
 const MemoryCache = require('react-native-clcasher/MemoryCache').default;
 
-const defaultDefaultOptions = {
-    headers: {},
-    ttl: 60 * 60 * 24 * 14, // 2 weeks
-    useQueryParamsInCacheKey: false,
-    cacheLocation: fsUtils.getCacheDir(),
-    allowSelfSignedSSL: false,
-};
+module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, path = pathUtils) => {
 
-module.exports = (defaultOptions = defaultDefaultOptions, urlCache = MemoryCache, fs = fsUtils, path = pathUtils) => {
+    const defaultDefaultOptions = {
+        headers: {},
+        ttl: 60 * 60 * 24 * 14, // 2 weeks
+        useQueryParamsInCacheKey: false,
+        cacheLocation: fs.getCacheDir(),
+        allowSelfSignedSSL: false,
+    };
 
     // apply default options
     _.defaults(defaultOptions, defaultDefaultOptions);
