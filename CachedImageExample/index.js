@@ -7,27 +7,19 @@ const _ = require('lodash');
 
 const {
     View,
+    ScrollView,
     Button,
     Dimensions,
     StyleSheet,
     AppRegistry,
-    ListView
+    ListView,
 } = ReactNative;
 
-const CachedImageBase = require('react-native-cached-image');
 const {
-    ImageCacheProvider
-} = CachedImageBase;
-
-const cachedImageOptions = {
-    cacheLocation: ImageCacheProvider.LOCATION.BUNDLE
-};
-
-function CachedImage(props) {
-    return (
-        <CachedImageBase {...props} {...cachedImageOptions} />
-    );
-}
+    CachedImage,
+    ImageCacheProvider,
+    ImageCacheManager,
+} = require('react-native-cached-image');
 
 const {
     width
@@ -54,13 +46,17 @@ const styles = StyleSheet.create({
 
 const loading = require('./loading.jpg');
 
+const image1 = 'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg';
+const image2 = 'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/baby-shower-full.jpg';
+
 const images = [
-    'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg',
-    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/wrong-image.jpg',
-    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
-    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/cheeseburger-full.jpg',
-    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/friendsgiving-full.jpg',
-    'https://d22cb02g3nv58u.cloudfront.net/0.671.0/assets/images/icons/fun-types/full/dogs-play-date-full.jpg'
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/after-work-drinks-full.jpg',
+    'https://i.ytimg.com/vi/b6m-XlOxjbk/hqdefault.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/wrong-image.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/bar-crawl-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/cheeseburger-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/friendsgiving-full.jpg',
+    'https://d22cb02g3nv58u.cloudfront.net/0.676.0/assets/images/icons/fun-types/full/dogs-play-date-full.jpg'
 ];
 
 function formatBytes(bytes, decimals) {
@@ -74,37 +70,51 @@ function formatBytes(bytes, decimals) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-const CachedImageExample = React.createClass({
+const defaultImageCacheManager = ImageCacheManager();
 
-    getInitialState() {
+class CachedImageExample extends React.Component {
+
+    constructor(props) {
+        super(props);
+
         const ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-        return {
+        this.state = {
             showNextImage: false,
             dataSource: ds.cloneWithRows(images)
         };
-    },
+
+        this.cacheImages = this.cacheImages.bind(this);
+
+    }
 
     componentWillMount() {
-        ImageCacheProvider.cacheMultipleImages(images, cachedImageOptions)
-            .then(() => {
-                console.log('cacheMultipleImages Done');
-            })
-            .catch(err => {
-                console.log('cacheMultipleImages caught an error: ', err);
-            });
-    },
+        defaultImageCacheManager.downloadAndCacheUrl(image1);
+    }
 
     clearCache() {
-        ImageCacheProvider.clearCache(cachedImageOptions);
-    },
+        defaultImageCacheManager.clearCache()
+            .then(() => {
+                ReactNative.Alert.alert('Cache cleared');
+            });
+    }
 
     getCacheInfo() {
-        ImageCacheProvider.getCacheInfo(cachedImageOptions)
+        defaultImageCacheManager.getCacheInfo()
             .then(({size, files}) => {
                 // console.log(size, files);
                 ReactNative.Alert.alert('Cache Info', `files: ${files.length}\nsize: ${formatBytes(size)}`);
             });
-    },
+    }
+
+    cacheImages() {
+        this.setState({
+            dataSource: this.state.dataSource.cloneWithRows([])
+        }, () => {
+            this.setState({
+                dataSource: this.state.dataSource.cloneWithRows(images)
+            });
+        });
+    }
 
     renderRow(uri) {
         return (
@@ -114,11 +124,11 @@ const CachedImageExample = React.createClass({
                 style={styles.image}
             />
         );
-    },
+    }
 
     render() {
         return (
-            <View style={styles.container}>
+            <ScrollView style={styles.container}>
                 <View style={styles.buttons}>
                     <Button
                         onPress={this.clearCache}
@@ -130,14 +140,37 @@ const CachedImageExample = React.createClass({
                         title="Cache Info"
                         color="#2ce7cc"
                     />
+                    <Button
+                        onPress={this.cacheImages}
+                        title="Cache Images"
+                        color="#826fe5"
+                    />
                 </View>
-                <ListView
-                    dataSource={this.state.dataSource}
-                    renderRow={this.renderRow}
-                />
-            </View>
+                <View>
+                    <CachedImage
+                        source={{uri: image1}}
+                        style={styles.image}
+                    />
+                    <CachedImage
+                        source={{uri: image2}}
+                        style={styles.image}
+                    />
+                </View>
+                <ImageCacheProvider
+                    urlsToPreload={images}
+                    onPreloadComplete={() => ReactNative.Alert.alert('onPreloadComplete')}
+                    ttl={60}
+                    numberOfConcurrentPreloads={0}>
+                    <ListView
+                        dataSource={this.state.dataSource}
+                        renderRow={this.renderRow}
+                        enableEmptySections={true}
+                    />
+                </ImageCacheProvider>
+            </ScrollView>
         );
     }
-});
+
+}
 
 AppRegistry.registerComponent('CachedImageExample', () => CachedImageExample);
