@@ -55,7 +55,7 @@ class ImageCacheProvider extends React.Component {
     }
 
     componentWillMount() {
-        this.preloadImages();
+        this.preloadImages(this.props.urlsToPreload);
     }
 
     componentWillReceiveProps(nextProps) {
@@ -63,7 +63,7 @@ class ImageCacheProvider extends React.Component {
         this.imageCacheManager = null;
         // preload new images if needed
         if (this.props.urlsToPreload !== nextProps.urlsToPreload) {
-            this.preloadImages();
+            this.preloadImages(nextProps.urlsToPreload);
         }
     }
 
@@ -79,9 +79,9 @@ class ImageCacheProvider extends React.Component {
         return this.imageCacheManager;
     }
 
-    preloadImages() {
+    preloadImages(urlsToPreload) {
         const imageCacheManager = this.getImageCacheManager();
-        ImageCachePreloader.preloadImages(this.props.urlsToPreload, imageCacheManager, this.props.numberOfConcurrentPreloads)
+        ImageCachePreloader.preloadImages(urlsToPreload, imageCacheManager, this.props.numberOfConcurrentPreloads)
             .then(() => this.props.onPreloadComplete());
     }
 
