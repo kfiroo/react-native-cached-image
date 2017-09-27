@@ -24,7 +24,7 @@ function getQueryForCacheKey(url, useQueryParamsInCacheKey) {
     return '';
 }
 
-function generateCacheKey(url, useQueryParamsInCacheKey) {
+function generateCacheKey(url, useQueryParamsInCacheKey = true) {
     const parsedUrl = new URL(url, null, true);
 
     const pathParts = parsedUrl.pathname.split('/');
