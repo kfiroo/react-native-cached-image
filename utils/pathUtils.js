@@ -66,6 +66,28 @@ module.exports = {
         return `${cacheLocation}/${cachePath}/${cacheKey}`;
     },
 
+		/**
+		 * Given an URL returns the file relative path in the file system corresponding to it's cached image location
+		 * @param url
+		 * @returns {string}
+		 */
+		getImageFileRelativePath(url) {
+				const cachePath = getCachePath(url);
+				const cacheKey = generateCacheKey(url);
+
+				return `${cachePath}/${cacheKey}`;
+		},
+
+		/**
+		 * Given an relative path and some options returns the file absolute path in the file system corresponding to it's cached image location
+		 * @param url
+		 * @param cacheLocation
+		 * @returns {string}
+		 */
+		getImageFilePathByRelativePath(path, cacheLocation) {
+				return `${cacheLocation}/${path}`;
+		},
+
     /**
      * returns the url after removing all unused query params
      * @param url
