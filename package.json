@@ -3,6 +3,7 @@
   "version": "1.4.0",
   "description": "CachedImage component for react-native",
   "main": "index.js",
+
   "scripts": {
     "test": "./node_modules/.bin/jest"
   },
@@ -45,6 +46,7 @@
     "utils/fsUtils.js",
     "utils/pathUtils.js"
   ],
+  "typings": "./index.d.ts",
   "dependencies": {
     "crypto-js": "3.1.9-1",
     "lodash": "4.17.4",
