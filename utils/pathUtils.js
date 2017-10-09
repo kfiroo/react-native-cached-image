@@ -85,7 +85,12 @@ module.exports = {
 		 * @returns {string}
 		 */
 		getImageFilePathByRelativePath(path, cacheLocation) {
-				return `${cacheLocation}/${path}`;
+				var relativePath = path
+				if(path.indexOf("imagesCacheDir") != -1) {
+					var index = path.indexOf("imagesCacheDir") + 15;
+					relativePath = path.substring(index)
+				}
+				return `${cacheLocation}/${relativePath}`;
 		},
 
     /**
