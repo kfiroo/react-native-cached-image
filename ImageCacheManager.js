@@ -6,7 +6,7 @@ const fsUtils = require('./utils/fsUtils');
 const pathUtils = require('./utils/pathUtils');
 const MemoryCache = require('react-native-clcasher/MemoryCache').default;
 
-module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, path = pathUtils) => {
+module.exports = (defaultOptions = {}, fs = fsUtils, path = pathUtils) => {
 
     const defaultDefaultOptions = {
         headers: {},
@@ -14,6 +14,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
         useQueryParamsInCacheKey: false,
         cacheLocation: fs.getCacheDir(),
         allowSelfSignedSSL: false,
+        urlCache: MemoryCache,
     };
 
     // apply default options
@@ -32,7 +33,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
         // cacheableUrl contains only the needed query params
         const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
         // note: urlCache may remove the entry if it expired so we need to remove the leftover file manually
-        return urlCache.get(cacheableUrl)
+        return options.urlCache.get(cacheableUrl)
             .then(filePath => {
                 if (!filePath) {
                     // console.log('ImageCacheManager: cache miss', cacheableUrl);
@@ -49,7 +50,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
                     // get the image to cache (download / copy / etc)
                     .then(() => getCachedFile(filePath))
                     // add to cache
-                    .then(() => urlCache.set(cacheableUrl, filePath, options.ttl))
+                    .then(() => options.urlCache.set(cacheableUrl, filePath, options.ttl))
                     // return filePath
                     .then(() => filePath);
             });
@@ -100,7 +101,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
             const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
             const filePath = path.getImageFilePath(cacheableUrl, options.cacheLocation);
             // remove file from cache
-            return urlCache.remove(cacheableUrl)
+            return options.urlCache.remove(cacheableUrl)
                 // remove file from disc
                 .then(() => fs.deleteFile(filePath));
         },
@@ -112,7 +113,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
          */
         clearCache(options = {}) {
             _.defaults(options, defaultOptions);
-            return urlCache.flush()
+            return options.urlCache.flush()
                 .then(() => fs.cleanDir(options.cacheLocation));
         },
 

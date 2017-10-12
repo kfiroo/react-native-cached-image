@@ -7,7 +7,7 @@ import ImageCacheManager from '../ImageCacheManager';
 import SimpleMemoryCache from './SimpleMemoryCache';
 import SimpleMemoryFs from './SimpleMemoryFs';
 
-const icm = ImageCacheManager({}, SimpleMemoryCache, SimpleMemoryFs);
+const icm = ImageCacheManager({ urlCache: SimpleMemoryCache}, SimpleMemoryFs);
 
 describe('ImageCacheManager', () => {
 
