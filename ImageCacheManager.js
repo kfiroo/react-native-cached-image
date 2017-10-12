@@ -39,7 +39,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
                     throw new Error('URL expired or not in cache');
                 }
                 // console.log('ImageCacheManager: cache hit', cacheableUrl);
-                return filePath;
+                return path.getImageFilePathByRelativePath(filePath,options.cacheLocation);
             })
             // url is not found in the cache or is expired
             .catch(() => {
@@ -49,7 +49,8 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
                     // get the image to cache (download / copy / etc)
                     .then(() => getCachedFile(filePath))
                     // add to cache
-                    .then(() => urlCache.set(cacheableUrl, filePath, options.ttl))
+                    // an absolute path may cause wrong path error on iOS sandbox
+                    .then(() => urlCache.set(cacheableUrl, path.getImageFileRelativePath(url), options.ttl))
                     // return filePath
                     .then(() => filePath);
             });
