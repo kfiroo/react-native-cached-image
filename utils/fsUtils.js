@@ -104,10 +104,27 @@ module.exports = {
                         let status = Math.floor(res.respInfo.status / 100);
                         if (status !== 2) {
                             // TODO - log / return error?
-                            throw new Error('Download failed');
+                            return Promise.reject();
                         }
-                        // the download is complete and rename the temporary file
-                        return fs.mv(tmpFile, toFile);
+
+                        return RNFetchBlob.fs.stat(tmpFile)
+                            .then(fileStats => {
+                                // Verify if the content was fully downloaded!
+                                if (res.respInfo.headers['Content-Length'] && res.respInfo.headers['Content-Length'] != fileStats.size) {
+                                    return Promise.reject();
+                                }
+
+                                // the download is complete and rename the temporary file
+                                return fs.mv(tmpFile, toFile);
+                            });
+
+
+                    })
+                    .catch(error => {
+                        // cleanup. will try re-download on next CachedImage mount.
+                        this.deleteFile(tmpFile);
+                        delete activeDownloads[toFile];
+                        return Promise.reject('Download failed');
                     })
                     .then(() => {
                         // cleanup
