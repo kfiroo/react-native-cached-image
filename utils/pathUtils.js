@@ -41,7 +41,7 @@ function generateCacheKey(url, useQueryParamsInCacheKey = true) {
     return SHA1(cacheable) + '.' + type;
 }
 
-function getCachePath(url) {
+function getHostCachePathComponent(url) {
     const {
         host
     } = new URL(url);
@@ -60,11 +60,25 @@ module.exports = {
      * @returns {string}
      */
     getImageFilePath(url, cacheLocation) {
-        const cachePath = getCachePath(url);
+        const hostCachePath = getHostCachePathComponent(url);
         const cacheKey = generateCacheKey(url);
 
-        return `${cacheLocation}/${cachePath}/${cacheKey}`;
+        return `${cacheLocation}/${hostCachePath}/${cacheKey}`;
     },
+
+    /**
+     * Given a URL returns the relative file path combined from host and url hash
+     * @param url
+     * @returns {string}
+     */
+
+    getImageRelativeFilePath(url) {
+        const hostCachePath = getHostCachePathComponent(url);
+        const cacheKey = generateCacheKey(url);
+
+        return `${hostCachePath}/${cacheKey}`;
+    },
+
 
     /**
      * returns the url after removing all unused query params

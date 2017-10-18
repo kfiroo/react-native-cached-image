@@ -33,23 +33,27 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
         const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
         // note: urlCache may remove the entry if it expired so we need to remove the leftover file manually
         return urlCache.get(cacheableUrl)
-            .then(filePath => {
-                if (!filePath) {
+            .then(fileRelativePath => {
+                if (!fileRelativePath) {
                     // console.log('ImageCacheManager: cache miss', cacheableUrl);
                     throw new Error('URL expired or not in cache');
                 }
                 // console.log('ImageCacheManager: cache hit', cacheableUrl);
-                return filePath;
+                return `${options.cacheLocation}/${fileRelativePath}`;
             })
             // url is not found in the cache or is expired
             .catch(() => {
-                const filePath = path.getImageFilePath(cacheableUrl, options.cacheLocation);
+                // const filePath = path.getImageFilePath(cacheableUrl, options.cacheLocation);
+                const fileRelativePath = path.getImageRelativeFilePath(cacheableUrl);
                 // remove expired file if exists
+
+                const filePath = `${options.cacheLocation}/${fileRelativePath}`
+
                 return fs.deleteFile(filePath)
                     // get the image to cache (download / copy / etc)
                     .then(() => getCachedFile(filePath))
                     // add to cache
-                    .then(() => urlCache.set(cacheableUrl, filePath, options.ttl))
+                    .then(() => urlCache.set(cacheableUrl, fileRelativePath, options.ttl))
                     // return filePath
                     .then(() => filePath);
             });
