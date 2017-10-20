@@ -182,4 +182,7 @@ module.exports = {
             });
     },
 
+    exists(path) {
+        return fs.exists(path);
+    }
 };
