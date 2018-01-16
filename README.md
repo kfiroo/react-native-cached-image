@@ -1,6 +1,5 @@
-[![npm version](https://badge.fury.io/js/react-native-cached-image.svg)](https://badge.fury.io/js/react-native-cached-image)
-
 # react-native-cached-image
+
 CachedImage component for react-native
 
 This package is greatly inspired by [@jayesbe](https://github.com/jayesbe)'s amazing [react-native-cacheable-image](https://github.com/jayesbe/react-native-cacheable-image) but adds some functionality that we were missing when trying to handle caching images in our react-native app.
@@ -8,19 +7,15 @@ This package is greatly inspired by [@jayesbe](https://github.com/jayesbe)'s ama
 ## Installation
 
     npm install react-native-cached-image --save
-
-or
-
+    - or -
     yarn add react-native-cached-image
 
-#### react-native-fs --> react-native-fetch-blob
-_\* As noted by [@Froelund](https://github.com/Froelund) [here](https://github.com/kfiroo/react-native-cached-image/issues/15) `react-native-fs` is not maintained anymore, but its author points to `react-native-fetch-blob` as an alternative [here](https://github.com/johanneslumpe/react-native-fs#this-project-is-not-actively-maintained-consider-using-react-native-fetch-blob-as-a-replacement)._
-
 We use [`react-native-fetch-blob`](https://github.com/wkh237/react-native-fetch-blob#installation) to handle file system access in this package and it requires an extra step during the installation.  
+
 _You should only have to do this once._
 
     react-native link react-native-fetch-blob
-    
+
 Or, if you want to add Android permissions to AndroidManifest.xml automatically, use this one:
 
     RNFB_ANDROID_PERMISSIONS=true react-native link react-native-fetch-blob
@@ -30,16 +25,83 @@ Add the following line to your android/app/src/AndroidManifest.xml
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-## API
-This package exposes 2 modules:
+## Usage
 
-1. `CachedImage` - `default` react-native component that is a drop-in replacement for your react-native `Image` components
-2. `ImageCacheProvider` - the cache API that you can use if you need to interact with the cache outside the scope of the component, for prefetching images for example.
+TODO - add usage example
+
+```jsx
+import React from 'react';
+import {
+    CachedImage,
+    ImageCacheProvider
+} from 'react-native-cached-image';
+
+const images = [
+    'https://example.com/images/1.jpg',
+    'https://example.com/images/2.jpg',
+    'https://example.com/images/3.jpg',
+    // ...
+];
+
+export default class Example extends React.Component {
+    render() {
+        return (
+            <ImageCacheProvider
+                urlsToPreload={images}
+                onPreloadComplete={() => console.log('hey there')}>
+
+                <CachedImage source={{uri: images[0]}}/>
+
+                <CachedImage source={{uri: images[1]}}/>
+
+                <CachedImage source={{uri: images[2]}}/>
+
+            </ImageCacheProvider>
+        );
+    }
+}
+```
+
+## API
+
+This package exposes 3 modules:
+```jsx
+const {
+    CachedImage,            // react-native component that is a drop-in replacement for your react-native `Image` components
+    ImageCacheProvider,     // a top level component that provides accsess to the underlying `ImageCacheManager` and preloads images
+    ImageCacheManager,      // the logic behind cache machanism - ttl, fs, url resolving etc. 
+} = require('react-native-cached-image');
+```
+
+### ImageCacheManager
+This is where all the cache magic takes place.
+The API usually takes a *URL* and a set of [`ImageCacheManagerOptions`](#imagecachemanageroptions).
+
+#### `ImageCacheManager.downloadAndCacheUrl(url: String, options: ImageCacheManagerOptions): Promise<String>`
+Check the cache for the the URL (after removing fixing the query string according to `ImageCacheManagerOptions.useQueryParamsInCacheKey`).
+If the URL exists in cache and is not expired, resolve with the local cached file path.
+Otherwise, download the file to the cache folder, add it to the cache and then return the cached file path.
+
+#### `ImageCacheManager.seedAndCacheUrl(url: String, seedPath: String, options: ImageCacheManagerOptions): Promise<String>`
+Check the cache for the the URL (after removing fixing the query string according to `ImageCacheManagerOptions.useQueryParamsInCacheKey`).
+If the URL exists in cache and is not expired, resolve with the local cached file path.
+Otherwise, copy the seed file into the cache folder, add it to the cache and then return the cached file path.
+
+#### `ImageCacheManager.deleteUrl(url: String, options: ImageCacheManagerOptions): Promise`
+Removes the cache entry for the URL and the local file corresponding to it, if it exists.
+
+#### `ImageCacheManager.clearCache(options: ImageCacheManagerOptions): Promise`
+Clear the URL cache and remove files in the cache folder (as stated in the `ImageCacheManagerOptions.cacheLocation`)
+
+#### `ImageCacheManager.getCacheInfo(options: ImageCacheManagerOptions): Promise.<{file: Array, size: Number}>`
+Returns info about the cache, list of files and the total size of the cache.
+
 
 ### CachedImage
-`CachedImage` is just like the native `Image` component, you can provide it with `defaultSource`, `style`, etc.  
-When providing `source={require('/path/to/local/image')}` or `source={{uri: '/path/to/local/image'}}` to it the image will be loaded from local source and will not be cached.  
-When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` the image will be downloaded and cached on the device to subsequent requests to the same url will always result in an instant load from the local image.  
+`CachedImage` is a drop in replacement for the `Image` component that will attempt to cache remote URLs for better performance.  
+It's main use is to hide the cache layer from the user and provide a simple way to cache images.  
+`CachedImage` uses an instance of `ImageCacheManager` to interact with the cache, if there is an instance provided by `ImageCacheProvider` via the context it will be used, otherwise a new instance will be created with the options from the component's props. 
+
 ```jsx
 <CachedImage
     source={{
@@ -48,68 +110,47 @@ When providing `source={{uri: 'https://example.com/path/to/remote/image.jpg'}}` 
     style={styles.image}
 />
 ```
+
 ##### Props
+* `renderImage` - a function that returns a component, used to override the underlying `Image` component.
 * `activityIndicatorProps` - props for the `ActivityIndicator` that is shown while the image is downloaded.
-* `useQueryParamsInCacheKey` - _array|bool_ an array of keys to use from the `source.uri` query string or a bool value stating whether to use the entire query string or not. **(default: false)**
 * `defaultSource` - prop to display a background image while the source image is downloaded. This will work even in android, but will not display background image if there you set borderRadius on this component style prop
-* `resolveHeaders` - _function_ when provided, the returned object will be used as the headers object when sending the request to download the image. **(default: () => Promise.resolve({}))**
+* `loadingIndicator` - _component_ prop to set custom `ActivityIndicator`.
+* `fallbackSource` - prop to set placeholder image. when `source.uri` is null or cached failed, the `fallbackSource` will be display.
+* any of the `ImageCacheManagerOptionsPropTypes` props - customize the `ImageCacheManager` for this specific `CachedImage` instance.
 
 ### ImageCacheProvider
-`ImageCacheProvider` exposes interaction with the cache layer that is used by `CachedImage` so you can use it to prefetch some urls in the background while you app is starting,
-or remove some outdated images from the cache to free some space up if needed.
+This is a top-level component with 2 major functions:
+1. Provide the customized `ImageCacheManager` to nested `CachedImage`.
+2. Preload a set of URLs.
 
-```javascript
-const CachedImage = require('react-native-cached-image');
+##### Props
+* `urlsToPreload` - an array of URLs to preload when the component mounts. default []
+* `numberOfConcurrentPreloads` - control the number of concurrent downloads, usually used when the `urlsToPreload` array is very big. default `urlsToPreload.length`
+* `onPreloadComplete` - callback for when the preload is complete and all images are cached.
 
-// CachedImage exposes ImageCacheProvider
-const ImageCacheProvider = CachedImage.ImageCacheProvider;
+### ImageCacheManagerOptions
+A set of options that are provided to the `ImageCacheManager` and provide ways to customize it to your needs.
 
-// will add the urls to the cache so when CachedImage will try to load them
-// the result will be and instant load from cache
-ImageCacheProvider.cacheMultipleImages([
-    'https://example.com/path/to/remote/image.jpg',
-    'https://example.com/path/to/remote/other-image.png'    
-]);
-
-// clear old urls from the cache, useful when updating your app version and
-// old version of the images are no longer relevant, for example
-ImageCacheProvider.deleteMultipleCachedImages([
-    'https://example.com/path/to/remote/image.jpg',
-    'https://example.com/path/to/remote/other-image.png'
-]);
-```
-
-#### `type: CacheOptions`
-```
-type ReadDirItem = {
-  useQueryParamsInCacheKey: string[]|bool; // same as the CachedImage props
-  cacheGroup: string; // the directory to save cached images in, defaults to the url hostname
+```jsx
+type ImageCacheManagerOptions = {
+    headers: PropTypes.object,                      // an object to be used as the headers when sending the request for the url. default {}
+    
+    ttl: PropTypes.number,                          // the number of seconds each url will stay in the cache. default 2 weeks
+    
+    useQueryParamsInCacheKey: PropTypes.oneOfType([ // when handling a URL with query params, this indicates how it should be treated:
+        PropTypes.bool,                             // if a bool value is given the whole query string will be used / ignored
+        PropTypes.arrayOf(PropTypes.string)         // if an array of strings is given, only these keys will be taken from the query string.
+    ]),                                             // default false
+    
+    cacheLocation: PropTypes.string,                // the path to the root of the cache folder. default the device cache dir 
+    
+    allowSelfSignedSSL: PropTypes.bool,             // true to allow self signed SSL URLs to be downloaded. default false
 };
+
 ```
 
-#### `ImageCacheProvider.isCacheable(url: string): bool`
-Returns a true if the url is cacheable, false if it isn't. Currently check if it is a remote url.
 
-#### `ImageCacheProvider.getCachedImagePath(url: string, options: CacheOptions): Promise<imagePath: string>`
-Returns a Promise that is resolved with the path to the underlying cached image file path if it exists.  
-Promise is rejected if the file doesn't exist.
+## Contributing
 
-#### `ImageCacheProvider.cacheImage(url: string, options: CacheOptions): Promise<imagePath: string>`
-Will download the file from the given url and save it to the device.  
-Returns a Promise that is resolved with the path to the underlying cached image file path if download was successful.  
-Promise is rejected if the download or file write failed.
-
-#### `ImageCacheProvider.deleteCachedImage(url: string, options: CacheOptions): Promise`
-Deletes the underlying cached image for a given url.
-
-#### `ImageCacheProvider.cacheMultipleImages(urls: string[], options: CacheOptions): Promise`
-Cache a list of urls, if any of the urls is already cached will not try to download again.
-
-#### `ImageCacheProvider.deleteMultipleCachedImages(urls: string[], options: CacheOptions): Promise`
-Deletes all images from cache that were cached using the given urls, if file doesn't exist do nothing
-
-#### Dependencies
-- [lodash](https://github.com/lodash/lodash) for props handling
-- [url-parse](https://github.com/unshiftio/url-parse) for url handling
-- [crypto-js](https://github.com/brix/crypto-js) for hashing
-- [react-native-fetch-blob](https://github.com/wkh237/react-native-fetch-blob) for downloading and saving images
+Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.

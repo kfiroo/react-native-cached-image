@@ -1,223 +1,94 @@
 'use strict';
 
 const _ = require('lodash');
+const React = require('react');
+const ReactNative = require('react-native');
 
-const RNFatchBlob = require('react-native-fetch-blob').default;
+const PropTypes = require('prop-types');
 
-const {
-    fs
-} = RNFatchBlob;
+const ImageCacheManagerOptionsPropTypes = require('./ImageCacheManagerOptionsPropTypes');
 
-const {
-    DocumentDir: DocumentDirectoryPath
-} = fs.dirs;
+const ImageCacheManager = require('./ImageCacheManager');
+const ImageCachePreloader = require('./ImageCachePreloader');
 
-const SHA1 = require("crypto-js/sha1");
-const URL = require('url-parse');
+class ImageCacheProvider extends React.Component {
+    static propTypes = {
+        // only a single child so we can render it without adding a View
+        children: PropTypes.element,
 
-const defaultHeaders = {};
-const defaultResolveHeaders = _.constant(defaultHeaders);
+        // ImageCacheManager options
+        ...ImageCacheManagerOptionsPropTypes,
 
-const defaultOptions = {
-    useQueryParamsInCacheKey: false
-};
+        // Preload urls
+        urlsToPreload: PropTypes.arrayOf(PropTypes.string).isRequired,
+        numberOfConcurrentPreloads: PropTypes.number.isRequired,
 
-const activeDownloads = {};
-
-function serializeObjectKeys(obj) {
-    return _(obj)
-        .toPairs()
-        .sortBy(a => a[0])
-        .map(a => a[1])
-        .value();
-}
-
-function getQueryForCacheKey(url, useQueryParamsInCacheKey) {
-    if (_.isArray(useQueryParamsInCacheKey)) {
-        return serializeObjectKeys(_.pick(url.query, useQueryParamsInCacheKey));
-    }
-    if (useQueryParamsInCacheKey) {
-        return serializeObjectKeys(url.query);
-    }
-    return '';
-}
-
-function generateCacheKey(url, options) {
-    const parsedUrl = new URL(url, null, true);
-
-    const pathParts = parsedUrl.pathname.split('/');
-
-    // last path part is the file name
-    const fileName = pathParts.pop();
-    const filePath = pathParts.join('/');
-
-    const parts = fileName.split('.');
-    // TODO - try to figure out the file type or let the user provide it, for now use jpg as default
-    const type = parts.length > 1 ? parts.pop() : 'jpg';
-
-    const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, options.useQueryParamsInCacheKey);
-    return SHA1(cacheable) + '.' + type;
-}
-
-function getCachePath(url, options) {
-    if (options.cacheGroup) {
-        return options.cacheGroup;
-    }
-    const parsedUrl = new URL(url);
-    return parsedUrl.host;
-}
-
-function getCachedImageFilePath(url, options) {
-    const cacheKey = generateCacheKey(url, options);
-    const cachePath = getCachePath(url, options);
-
-    const dirPath = DocumentDirectoryPath + '/' + cachePath;
-    return dirPath + '/' + cacheKey;
-}
-
-function deleteFile(filePath) {
-    return fs.stat(filePath)
-        .then(res => res && res.type === 'file')
-        .then(exists => exists && fs.unlink(filePath))
-        .catch((err) => {
-            // swallow error to always resolve
-        });
-}
-
-function ensurePath(filePath) {
-    const parts = filePath.split('/');
-    const dirPath = _.initial(parts).join('/');
-    return fs.isDir(dirPath)
-        .then(exists =>
-            !exists && fs.mkdir(dirPath)
-        );
-}
-
-/**
- * returns a promise that is resolved when the download of the requested file
- * is complete and the file is saved.
- * if the download fails, or was stopped the partial file is deleted, and the
- * promise is rejected
- * @param fromUrl   String source url
- * @param toFile    String destination path
- * @param headers   Object headers to use when downloading the file
- * @returns {Promise}
- */
-function downloadImage(fromUrl, toFile, headers = {}) {
-    // use toFile as the key as is was created using the cacheKey
-    if (!_.has(activeDownloads, toFile)) {
-        // create an active download for this file
-        activeDownloads[toFile] = new Promise((resolve, reject) => {
-            RNFatchBlob
-                .config({path: toFile})
-                .fetch('GET', fromUrl, headers)
-                .then(res => resolve(toFile))
-                .catch(err =>
-                    deleteFile(toFile)
-                        .then(() => reject(err))
-                )
-                .finally(() => {
-                    // cleanup
-                    delete activeDownloads[toFile];
-                });
-        });
-    }
-    return activeDownloads[toFile];
-}
-
-function createPrefetcer(list) {
-    const urls = _.clone(list);
-    return {
-        next() {
-            return urls.shift();
-        }
+        onPreloadComplete: PropTypes.func.isRequired,
     };
-}
 
-function runPrefetchTask(prefetcher, options) {
-    const url = prefetcher.next();
-    if (!url) {
-        return Promise.resolve();
+    static defaultProps = {
+        urlsToPreload: [],
+        numberOfConcurrentPreloads: 0,
+        onPreloadComplete: _.noop,
+    };
+
+    static childContextTypes = {
+        getImageCacheManager: PropTypes.func,
+    };
+
+    constructor(props) {
+        super(props);
+
+        this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
+        this.getImageCacheManager = this.getImageCacheManager.bind(this);
+        this.preloadImages = this.preloadImages.bind(this);
+
     }
-    // if url is cacheable - cache it
-    if (isCacheable(url)) {
-        // check cache
-        return getCachedImagePath(url, options)
-        // if not found download
-            .catch(() => cacheImage(url, options))
-            // then run next task
-            .then(() => runPrefetchTask(prefetcher, options));
+
+    getChildContext() {
+        const self = this;
+        return {
+            getImageCacheManager() {
+                return self.getImageCacheManager();
+            }
+        };
     }
-    // else get next
-    return runPrefetchTask(prefetcher, options);
-}
 
-// API
+    componentWillMount() {
+        this.preloadImages(this.props.urlsToPreload);
+    }
 
-function isCacheable(url) {
-    return _.isString(url) && (_.startsWith(url, 'http://') || _.startsWith(url, 'https://'));
-}
+    componentWillReceiveProps(nextProps) {
+        // reset imageCacheManager in case any option changed
+        this.imageCacheManager = null;
+        // preload new images if needed
+        if (this.props.urlsToPreload !== nextProps.urlsToPreload) {
+            this.preloadImages(nextProps.urlsToPreload);
+        }
+    }
 
-function getCachedImagePath(url, options = defaultOptions) {
-    const filePath = getCachedImageFilePath(url, options);
-    return fs.stat(filePath)
-        .then(res => {
-            if (res.type !== 'file') {
-                // reject the promise if res is not a file
-                throw new Error('Failed to get image from cache');
-            }
-            if (!res.size) {
-                // something went wrong with the download, file size is 0, remove it
-                return deleteFile(filePath)
-                    .then(() => {
-                        throw new Error('Failed to get image from cache');
-                    });
-            }
-            return filePath;
-        })
-        .catch(err => {
-            throw err;
-        })
-}
+    getImageCacheManagerOptions() {
+        return _.pick(this.props, _.keys(ImageCacheManagerOptionsPropTypes));
+    }
 
-function cacheImage(url, options = defaultOptions, resolveHeaders = defaultResolveHeaders) {
-    const filePath = getCachedImageFilePath(url, options);
-    return ensurePath(filePath)
-        .then(() => resolveHeaders())
-        .then(headers => downloadImage(url, filePath, headers));
-}
+    getImageCacheManager() {
+        if (!this.imageCacheManager) {
+            const options = this.getImageCacheManagerOptions();
+            this.imageCacheManager = ImageCacheManager(options);
+        }
+        return this.imageCacheManager;
+    }
 
-function deleteCachedImage(url, options = defaultOptions) {
-    const filePath = getCachedImageFilePath(url, options);
-    return deleteFile(filePath);
-}
+    preloadImages(urlsToPreload) {
+        const imageCacheManager = this.getImageCacheManager();
+        ImageCachePreloader.preloadImages(urlsToPreload, imageCacheManager, this.props.numberOfConcurrentPreloads)
+            .then(() => this.props.onPreloadComplete());
+    }
 
-function cacheMultipleImages(urls, options = defaultOptions) {
-    const prefetcher = createPrefetcer(urls);
-    const numberOfWorkers = urls.length;
-    const promises = _.times(numberOfWorkers, () =>
-        runPrefetchTask(prefetcher, options)
-    );
-    return Promise.all(promises);
-}
-
-function deleteMultipleCachedImages(urls, options = defaultOptions) {
-    return _.reduce(urls, (p, url) =>
-            p.then(() => deleteCachedImage(url, options)),
-        Promise.resolve()
-    );
-}
-
-function clearCache() {
+    render() {
+        return React.Children.only(this.props.children);
+    }
 
 }
 
-module.exports = {
-    isCacheable,
-    getCachedImagePath,
-    cacheImage,
-    deleteCachedImage,
-    cacheMultipleImages,
-    deleteMultipleCachedImages,
-    clearCache
-};
+module.exports = ImageCacheProvider;
