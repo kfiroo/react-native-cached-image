@@ -23,14 +23,17 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
         return _.isString(url) && (_.startsWith(url.toLowerCase(), 'http://') || _.startsWith(url.toLowerCase(), 'https://'));
     }
 
-    function cacheUrl(url, options, getCachedFile) {
+    function getCachableUrl(url, options) {
         if (!isCacheable(url)) {
             return Promise.reject(new Error('Url is not cacheable'));
         }
         // allow CachedImage to provide custom options
         _.defaults(options, defaultOptions);
         // cacheableUrl contains only the needed query params
-        const cacheableUrl = path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
+        return path.getCacheableUrl(url, options.useQueryParamsInCacheKey);
+    }
+
+    function getCachedFile(cacheableUrl, options) {
         // note: urlCache may remove the entry if it expired so we need to remove the leftover file manually
         return urlCache.get(cacheableUrl)
             .then(fileRelativePath => {
@@ -50,6 +53,18 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
                         }
                     });
             })
+    }
+
+    function isCached(url, options) {
+        const cacheableUrl = getCachableUrl(url, options);
+        return getCachedFile(cacheableUrl, options)
+            .then(filePath => !!filePath)
+            .catch(() => false);
+    }
+
+    function cacheUrl(url, options, cacheMethod) {
+        const cacheableUrl = getCachableUrl(url, options);
+        return getCachedFile(cacheableUrl, options)
             // url is not found in the cache or is expired
             .catch(() => {
                 const fileRelativePath = path.getImageRelativeFilePath(cacheableUrl);
@@ -58,7 +73,7 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
                 // remove expired file if exists
                 return fs.deleteFile(filePath)
                     // get the image to cache (download / copy / etc)
-                    .then(() => getCachedFile(filePath))
+                    .then(() => cacheMethod(filePath))
                     // add to cache
                     .then(() => urlCache.set(cacheableUrl, fileRelativePath, options.ttl))
                     // return filePath
@@ -67,6 +82,16 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
     }
 
     return {
+
+        /**
+         * check whether a url is already cached or not
+         * @param url
+         * @param options
+         * @returns {Promise}
+         */
+        isUrlCached(url, options = {}) {
+            return isCached(url, options);
+        },
 
         /**
          * download an image and cache the result according to the given options
