@@ -39,7 +39,7 @@ function ensurePath(path) {
             if (err.message.includes('folder already exists')) {
                 return;
             }
-            if (__DEV__) console.warn(err);
+            return Promise.reject(err);
         });
 }
 
@@ -186,7 +186,7 @@ module.exports = {
                 if (isDir) {
                     return collectFilesInfo(dirPath);
                 } else {
-                    if (__DEV__) console.warn('Dir does not exists');
+                    return Promise.reject('Dir does not exists');
                 }
             })
             .then(filesInfo => {
