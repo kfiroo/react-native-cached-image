@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 
-const RNFetchBlob = require('react-native-fetch-blob').default;
+const RNFetchBlob = require('rn-fetch-blob').default;
 
 const {
     fs
@@ -39,7 +39,7 @@ function ensurePath(path) {
             if (err.message.includes('folder already exists')) {
                 return;
             }
-            throw err;
+            if (__DEV__) console.warn(err);
         });
 }
 
@@ -186,7 +186,7 @@ module.exports = {
                 if (isDir) {
                     return collectFilesInfo(dirPath);
                 } else {
-                    throw new Error('Dir does not exists');
+                    if (__DEV__) console.warn('Dir does not exists');
                 }
             })
             .then(filesInfo => {
