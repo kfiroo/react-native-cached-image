@@ -1,6 +1,6 @@
 {
   "name": "react-native-cached-image",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "CachedImage component for react-native",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,9 @@
     },
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/CachedImageExample/"
+      "/CachedImageExample/",
+      "/__tests__/SimpleMemoryCache.js",
+      "/__tests__/SimpleMemoryFs.js"
     ],
     "modulePathIgnorePatterns": [
       "/CachedImageExample/"
@@ -48,11 +50,11 @@
   "typings": "./index.d.ts",
   "dependencies": {
     "crypto-js": "3.1.9-1",
-    "lodash": "4.17.4",
+    "lodash": "4.17.11",
     "prop-types": "15.5.10",
     "react-native-clcasher": "1.0.0",
-    "react-native-fetch-blob": "0.10.8",
-    "url-parse": "1.1.9"
+    "rn-fetch-blob": "0.10.13",
+    "url-parse": "1.4.4"
   },
   "devDependencies": {
     "babel-jest": "^21.0.2",

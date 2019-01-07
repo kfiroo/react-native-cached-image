@@ -10,15 +10,15 @@ This package is greatly inspired by [@jayesbe](https://github.com/jayesbe)'s ama
     - or -
     yarn add react-native-cached-image
 
-We use [`react-native-fetch-blob`](https://github.com/wkh237/react-native-fetch-blob#installation) to handle file system access in this package and it requires an extra step during the installation.  
+We use [`rn-fetch-blob`](https://github.com/joltup/rn-fetch-blob#installation) to handle file system access in this package and it requires an extra step during the installation.  
 
 _You should only have to do this once._
 
-    react-native link react-native-fetch-blob
+    react-native link rn-fetch-blob
 
 Or, if you want to add Android permissions to AndroidManifest.xml automatically, use this one:
 
-    RNFB_ANDROID_PERMISSIONS=true react-native link react-native-fetch-blob
+    RNFB_ANDROID_PERMISSIONS=true react-native link rn-fetch-blob
 
 ### Network Status - Android only
 Add the following line to your android/app/src/AndroidManifest.xml
@@ -69,7 +69,7 @@ This package exposes 3 modules:
 const {
     CachedImage,            // react-native component that is a drop-in replacement for your react-native `Image` components
     ImageCacheProvider,     // a top level component that provides accsess to the underlying `ImageCacheManager` and preloads images
-    ImageCacheManager,      // the logic behind cache machanism - ttl, fs, url resolving etc. 
+    ImageCacheManager,      // the logic behind cache machanism - ttl, fs, url resolving etc.
 } = require('react-native-cached-image');
 ```
 
@@ -100,7 +100,7 @@ Returns info about the cache, list of files and the total size of the cache.
 ### CachedImage
 `CachedImage` is a drop in replacement for the `Image` component that will attempt to cache remote URLs for better performance.  
 It's main use is to hide the cache layer from the user and provide a simple way to cache images.  
-`CachedImage` uses an instance of `ImageCacheManager` to interact with the cache, if there is an instance provided by `ImageCacheProvider` via the context it will be used, otherwise a new instance will be created with the options from the component's props. 
+`CachedImage` uses an instance of `ImageCacheManager` to interact with the cache, if there is an instance provided by `ImageCacheProvider` via the context it will be used, otherwise a new instance will be created with the options from the component's props.
 
 ```jsx
 <CachedImage
@@ -135,16 +135,16 @@ A set of options that are provided to the `ImageCacheManager` and provide ways t
 ```jsx
 type ImageCacheManagerOptions = {
     headers: PropTypes.object,                      // an object to be used as the headers when sending the request for the url. default {}
-    
+
     ttl: PropTypes.number,                          // the number of seconds each url will stay in the cache. default 2 weeks
-    
+
     useQueryParamsInCacheKey: PropTypes.oneOfType([ // when handling a URL with query params, this indicates how it should be treated:
         PropTypes.bool,                             // if a bool value is given the whole query string will be used / ignored
         PropTypes.arrayOf(PropTypes.string)         // if an array of strings is given, only these keys will be taken from the query string.
     ]),                                             // default false
-    
-    cacheLocation: PropTypes.string,                // the path to the root of the cache folder. default the device cache dir 
-    
+
+    cacheLocation: PropTypes.string,                // the path to the root of the cache folder. default the device cache dir
+
     allowSelfSignedSSL: PropTypes.bool,             // true to allow self signed SSL URLs to be downloaded. default false
 };
 
