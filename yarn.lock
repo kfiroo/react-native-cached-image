@@ -4412,10 +4412,9 @@ rimraf@~2.2.6:
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.2.8.tgz#e439be2aaee327321952730f99a8929e4fc50582"
   integrity sha1-5Dm+Kq7jJzIZUnMPmaiSnk/FBYI=
 
-rn-fetch-blob@0.10.13:
-  version "0.10.13"
-  resolved "https://registry.yarnpkg.com/rn-fetch-blob/-/rn-fetch-blob-0.10.13.tgz#e0fd5eac1a3a872563b35061353d96c4e51ae1cc"
-  integrity sha512-CEz7coPlMMUpX5RB+k7Mqzq+eYYfZuFbpuNkFYhvEFnT5DnZyqdNF50Xk6BuZyqZwAjNvsQ1CUMz7XDvuN10DA==
+rn-fetch-blob@RateBeer/rn-fetch-blob#v0.10.16:
+  version "0.10.16"
+  resolved "https://codeload.github.com/RateBeer/rn-fetch-blob/tar.gz/2566a9114ce19c0bbf578881a2ac0f0c72bc3fcf"
   dependencies:
     base-64 "0.1.0"
     glob "7.0.6"
