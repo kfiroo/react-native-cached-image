@@ -10,10 +10,10 @@ module.exports = (defaultOptions = {}, urlCache = MemoryCache, fs = fsUtils, pat
 
     const defaultDefaultOptions = {
         headers: {},
-        ttl: 60 * 60 * 24 * 14, // 2 weeks
+        ttl: 3600 * 24 * 30,   // 60 * 60 * 24 * 14, // 2 weeks
         useQueryParamsInCacheKey: false,
         cacheLocation: fs.getCacheDir(),
-        allowSelfSignedSSL: false,
+        allowSelfSignedSSL: true,   // false,
     };
 
     // apply default options
