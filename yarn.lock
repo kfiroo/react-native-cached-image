@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@react-native-community/netinfo@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-2.0.3.tgz#3d6786714270fca4f5e293b01bcb7ac05b9a4075"
+  integrity sha512-O5pVNTLZEfnqCurKzj5upMWf79lbDZDgn+WEnLL0feCgoWK7UFNz8ZyXD+9TE1O9bp4Ib4cw3pdMnYK3yPMU0Q==
+
 abab@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/abab/-/abab-1.0.3.tgz#b81de5f7274ec4e756d797cd834f303642724e5d"
