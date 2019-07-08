@@ -1,232 +1,312 @@
-'use strict';
-
 const _ = require('lodash');
 const React = require('react');
 const ReactNative = require('react-native');
-
 const PropTypes = require('prop-types');
-
 const ImageCacheManagerOptionsPropTypes = require('./ImageCacheManagerOptionsPropTypes');
+const ImageCacheManager = require('./ImageCacheManager');
 
 const flattenStyle = ReactNative.StyleSheet.flatten;
 
-const ImageCacheManager = require('./ImageCacheManager');
-
 const {
-    View,
-    ImageBackground,
-    ActivityIndicator,
-    NetInfo,
-    Platform,
-    StyleSheet,
+  View,
+  ImageBackground,
+  ActivityIndicator,
+  NetInfo,
+  Platform,
+  StyleSheet,
+  Animated,
 } = ReactNative;
 
 const styles = StyleSheet.create({
-    image: {
-        backgroundColor: 'transparent'
-    },
-    loader: {
-        backgroundColor: 'transparent',
-    },
-    loaderPlaceholder: {
-        backgroundColor: 'transparent',
-        alignItems: 'center',
-        justifyContent: 'center'
-    }
+  image: {
+    backgroundColor: 'transparent',
+  },
+  loader: {
+    backgroundColor: 'transparent',
+  },
+  loaderPlaceholder: {
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
+  return _.omit(props, [
+    'source',
+    'defaultSource',
+    'fallbackSource',
+    'LoadingIndicator',
+    'loadingIndicatorProps',
+    'style',
+    'useQueryParamsInCacheKey',
+    'renderImage',
+    'resolveHeaders',
+  ]);
 }
 
-const CACHED_IMAGE_REF = 'cachedImage';
-
 class CachedImage extends React.Component {
-
-    static propTypes = {
-        renderImage: PropTypes.func.isRequired,
-        activityIndicatorProps: PropTypes.object.isRequired,
-
-        // ImageCacheManager options
-        ...ImageCacheManagerOptionsPropTypes,
+  constructor(props) {
+    super(props);
+    this._isMounted = false;
+    this.state = {
+      isCacheable: true,
+      cachedImagePath: null,
+      networkAvailable: true,
+      processingSource: false,
+      downloadProgress: new Animated.Value(0),
     };
+    this.imageRefSetter = this.imageRefSetter.bind(this);
+    this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
+    this.getImageCacheManager = this.getImageCacheManager.bind(this);
+    this.safeSetState = this.safeSetState.bind(this);
+    this.handleConnectivityChange = this.handleConnectivityChange.bind(this);
+    this.processSource = this.processSource.bind(this);
+    this.renderLoader = this.renderLoader.bind(this);
+    this.progressListener = this.progressListener.bind(this);
+    this.progressInterpolation = this.progressInterpolation.bind(this);
+  }
 
-    static defaultProps = {
-            renderImage: props => (<ImageBackground imageStyle={props.style} ref={CACHED_IMAGE_REF} {...props} />),
-            activityIndicatorProps: {},
-    };
+  componentWillMount() {
+    const { source, callbacks } = this.props;
+    this._isMounted = true;
+    NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
+    // initial
+    NetInfo.isConnected.fetch().then(isConnected => {
+      this.safeSetState({
+        networkAvailable: isConnected,
+      });
+    });
 
-    static contextTypes = {
-        getImageCacheManager: PropTypes.func,
-    };
+    this.processSource(
+      source,
+      Object.assign(callbacks, {
+        progressTracker: this.progressListener,
+      })
+    );
+  }
 
-    constructor(props) {
-        super(props);
-        this._isMounted = false;
-        this.state = {
-            isCacheable: true,
-            cachedImagePath: null,
-            networkAvailable: true
-        };
-
-        this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
-        this.getImageCacheManager = this.getImageCacheManager.bind(this);
-        this.safeSetState = this.safeSetState.bind(this);
-        this.handleConnectivityChange = this.handleConnectivityChange.bind(this);
-        this.processSource = this.processSource.bind(this);
-        this.renderLoader = this.renderLoader.bind(this);
+  shouldComponentUpdate(nextProps, nextState) {
+    const { source: oldSource, callbacks } = this.props;
+    const { source: newSource } = nextProps;
+    if (!_.isEqual(oldSource, newSource)) {
+      this.processSource(
+        newSource,
+        Object.assign(callbacks, {
+          progressTracker: this.progressListener,
+        })
+      );
     }
+    return true;
+  }
 
-    componentWillMount() {
-        this._isMounted = true;
-        NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
-        // initial
-        NetInfo.isConnected.fetch()
-            .then(isConnected => {
-                this.safeSetState({
-                    networkAvailable: isConnected
-                });
-            });
+  componentWillUnmount() {
+    this._isMounted = false;
+    NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+  }
 
-        this.processSource(this.props.source);
+  setNativeProps(nativeProps) {
+    try {
+      this.cachedImage.setNativeProps(nativeProps);
+    } catch (e) {
+      console.error(e);
     }
+  }
 
-    componentWillUnmount() {
-        this._isMounted = false;
-        NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+  getImageCacheManagerOptions() {
+    return _.pick(this.props, _.keys(ImageCacheManagerOptionsPropTypes));
+  }
+
+  getImageCacheManager() {
+    // try to get ImageCacheManager from context
+    if (this.context && this.context.getImageCacheManager) {
+      return this.context.getImageCacheManager();
     }
+    // create a new one if context is not available
+    const options = this.getImageCacheManagerOptions();
+    return ImageCacheManager(options);
+  }
 
-    componentWillReceiveProps(nextProps) {
-        if (!_.isEqual(this.props.source, nextProps.source)) {
-            this.processSource(nextProps.source);
-        }
+  safeSetState(newState) {
+    if (!this._isMounted) {
+      return;
     }
+    this.setState(newState);
+  }
 
-    setNativeProps(nativeProps) {
-        try {
-            this.refs[CACHED_IMAGE_REF].setNativeProps(nativeProps);
-        } catch (e) {
-            console.error(e);
-        }
-    }
+  handleConnectivityChange(isConnected) {
+    this.safeSetState({
+      networkAvailable: isConnected,
+    });
+  }
 
-    getImageCacheManagerOptions() {
-        return _.pick(this.props, _.keys(ImageCacheManagerOptionsPropTypes));
-    }
+  imageRefSetter(node) {
+    this.cachedImage = node;
+  }
 
-    getImageCacheManager() {
-        // try to get ImageCacheManager from context
-        if (this.context && this.context.getImageCacheManager) {
-            return this.context.getImageCacheManager();
-        }
-        // create a new one if context is not available
-        const options = this.getImageCacheManagerOptions();
-        return ImageCacheManager(options);
-    }
+  progressListener(received, total) {
+    const { downloadProgress } = this.state;
+    const progress = received / total;
+    const evaluatedProgress = progress > 0 ? progress : 1;
+    Animated.timing(downloadProgress, {
+      toValue: evaluatedProgress,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  }
 
-    safeSetState(newState) {
-        if (!this._isMounted) {
-            return;
-        }
-        return this.setState(newState);
-    }
+  progressInterpolation() {
+    const { downloadProgress } = this.state;
+    return downloadProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-100, 0],
+      extrapolate: 'clamp',
+    });
+  }
 
-    handleConnectivityChange(isConnected) {
+  processSource(source, callbacks) {
+    const { state, props } = this;
+    const { downloadProgress } = state;
+    const url = _.get(source, ['uri'], null);
+    const options = this.getImageCacheManagerOptions();
+    const imageCacheManager = this.getImageCacheManager();
+    downloadProgress.setValue(0);
+    this.safeSetState({ processingSource: true });
+
+    imageCacheManager
+      .downloadAndCacheUrl(url, options, callbacks)
+      .then(cachedImagePath => {
         this.safeSetState({
-            networkAvailable: isConnected
+          cachedImagePath,
+          processingSource: false,
         });
-    }
-
-    processSource(source) {
-        const url = _.get(source, ['uri'], null);
-        const options = this.getImageCacheManagerOptions();
-        const imageCacheManager = this.getImageCacheManager();
-
-        imageCacheManager.downloadAndCacheUrl(url, options)
-            .then(cachedImagePath => {
-                this.safeSetState({
-                    cachedImagePath
-                });
-            })
-            .catch(err => {
-                // console.warn(err);
-                this.safeSetState({
-                    cachedImagePath: null,
-                    isCacheable: false
-                });
-            });
-    }
-
-    render() {
-        if (this.state.isCacheable && !this.state.cachedImagePath) {
-            return this.renderLoader();
-        }
-        const props = getImageProps(this.props);
-        const style = this.props.style || styles.image;
-        const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
-            uri: 'file://' + this.state.cachedImagePath
-        } : this.props.source;
-        if (this.props.fallbackSource && !this.state.cachedImagePath) {
-            return this.props.renderImage({
-                ...props,
-                key: `${props.key || source.uri}error`,
-                style,
-                source: this.props.fallbackSource
-            });
-        }
-        return this.props.renderImage({
-            ...props,
-            key: props.key || source.uri,
-            style,
-            source
+      })
+      .catch(err => {
+        // console.warn(err);
+        this.safeSetState({
+          cachedImagePath: null,
+          isCacheable: false,
+          processingSource: false,
         });
+      });
+  }
+
+  renderLoader() {
+    const {
+      style: propsStyle,
+      loadingIndicatorProps: propsActivityIndicatorProps,
+      loadingIndicator: propsLoadingIndicator,
+      defaultSource: propsDefaultSource,
+      renderImage,
+    } = this.props;
+    const { downloadProgress } = this.state;
+    const imageProps = getImageProps(this.props);
+    const imageStyle = [propsStyle, styles.loaderPlaceholder];
+    const loadingIndicatorProps = _.omit(propsActivityIndicatorProps, ['style']);
+    const activityIndicatorStyle = propsActivityIndicatorProps.style || styles.loader;
+    const LoadingIndicator = propsLoadingIndicator;
+    const source = propsDefaultSource;
+    // if the imageStyle has borderRadius it will break the loading image view on android
+    // so we only show the ActivityIndicator
+    if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
+      if (LoadingIndicator) {
+        return (
+          <View style={[imageStyle, activityIndicatorStyle]}>
+            <LoadingIndicator
+              {...loadingIndicatorProps}
+              progress={downloadProgress}
+              style={propsStyle}
+            />
+          </View>
+        );
+      }
+      return (
+        <ActivityIndicator
+          {...loadingIndicatorProps}
+          style={[imageStyle, activityIndicatorStyle]}
+        />
+      );
     }
+    // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
+    return renderImage({
+      ...imageProps,
+      style: imageStyle,
+      key: source.uri,
+      source,
+      children: LoadingIndicator ? (
+        <View style={[imageStyle, activityIndicatorStyle]}>
+          <LoadingIndicator {...loadingIndicatorProps} />
+        </View>
+      ) : (
+        <ActivityIndicator {...loadingIndicatorProps} style={activityIndicatorStyle} />
+      ),
+    });
+  }
 
-    renderLoader() {
-        const imageProps = getImageProps(this.props);
-        const imageStyle = [this.props.style, styles.loaderPlaceholder];
-
-        const activityIndicatorProps = _.omit(this.props.activityIndicatorProps, ['style']);
-        const activityIndicatorStyle = this.props.activityIndicatorProps.style || styles.loader;
-
-        const LoadingIndicator = this.props.loadingIndicator;
-
-        const source = this.props.defaultSource;
-
-        // if the imageStyle has borderRadius it will break the loading image view on android
-        // so we only show the ActivityIndicator
-        if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
-            if (LoadingIndicator) {
-                return (
-                    <View style={[imageStyle, activityIndicatorStyle]}>
-                        <LoadingIndicator {...activityIndicatorProps} />
-                    </View>
-                );
-            }
-            return (
-                <ActivityIndicator
-                    {...activityIndicatorProps}
-                    style={[imageStyle, activityIndicatorStyle]}/>
-            );
-        }
-        // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
-        return this.props.renderImage({
-            ...imageProps,
-            style: imageStyle,
-            key: source.uri,
-            source,
-            children: (
-                LoadingIndicator
-                    ? <View style={[imageStyle, activityIndicatorStyle]}>
-                    <LoadingIndicator {...activityIndicatorProps} />
-                </View>
-                    : <ActivityIndicator
-                    {...activityIndicatorProps}
-                    style={activityIndicatorStyle}/>
-            )
-        });
+  render() {
+    const { isCacheable, cachedImagePath, processingSource } = this.state;
+    const {
+      style: propsStyle,
+      source: propsSource,
+      fallbackSource: propsFallbackSource,
+      renderImage,
+    } = this.props;
+    if (processingSource || (isCacheable && !cachedImagePath)) {
+      return this.renderLoader();
     }
-
+    const props = getImageProps(this.props);
+    const style = propsStyle || styles.image;
+    const source =
+      isCacheable && cachedImagePath
+        ? {
+            uri: `file://${cachedImagePath}`,
+          }
+        : propsSource;
+    if (propsFallbackSource && !cachedImagePath) {
+      return renderImage({
+        ...props,
+        key: `${props.key || source.uri}error`,
+        style,
+        source: propsFallbackSource,
+      });
+    }
+    return renderImage({
+      ...props,
+      key: props.key || source.uri,
+      style,
+      source,
+    });
+  }
 }
 
 module.exports = CachedImage;
+
+CachedImage.propTypes = {
+  renderImage: PropTypes.func,
+  loadingIndicatorProps: PropTypes.shape({}),
+  callbacks: PropTypes.exact({
+    onStartDownloading: PropTypes.func,
+    onFinishDownloading: PropTypes.func,
+    progressTracker: PropTypes.func,
+  }),
+  style: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]),
+  // ImageCacheManager options
+  ...ImageCacheManagerOptionsPropTypes,
+};
+
+CachedImage.defaultProps = {
+  renderImage: props => {
+    const { style } = props;
+    return <ImageBackground imageStyle={style} ref={this.imageRefSetter} {...props} />;
+  },
+  style: {},
+  loadingIndicatorProps: {},
+  callbacks: {
+    onStartDownloading: () => {},
+    onFinishDownloading: () => {},
+  },
+};
+
+CachedImage.contextTypes = {
+  getImageCacheManager: PropTypes.func,
+};
