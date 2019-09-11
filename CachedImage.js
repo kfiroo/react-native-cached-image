@@ -21,6 +21,8 @@ const {
     StyleSheet,
 } = ReactNative;
 
+const NetInfo = require("@react-native-community/netinfo");
+
 const styles = StyleSheet.create({
     image: {
         backgroundColor: 'transparent'
@@ -77,7 +79,7 @@ class CachedImage extends React.Component {
         this.renderLoader = this.renderLoader.bind(this);
     }
 
-    componentWillMount() {
+    componentDidMount() {
         this._isMounted = true;
         NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
         // initial
