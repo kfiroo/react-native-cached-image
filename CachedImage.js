@@ -16,7 +16,6 @@ const {
     View,
     ImageBackground,
     ActivityIndicator,
-    NetInfo,
     Platform,
     StyleSheet,
 } = ReactNative;
