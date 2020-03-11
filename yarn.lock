@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@react-native-community/netinfo@^4.2.1":
-  version "4.2.1"
-  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-4.2.1.tgz#b6309f078da500807ef8afa4d659e56ccd14dee4"
-  integrity sha512-kAnmYp8vXpZToPw8rgE7uO+MqmqHSR9VEDPkuZT0DnFMBJmIXCSD2NLAD28HGKVY/kujVWCknC/FuVWr5/A3uA==
+"@react-native-community/netinfo@^5.6.1":
+  version "5.6.2"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-5.6.2.tgz#a054db83a1787711f9f69029e2c9b80735ac3f75"
+  integrity sha512-IkzS78nOiPNM/MboBqqbk2eMBrflp8VML/p33pd50KZq+PvBq8Oywt1JKOgdaMxUIbGjP73zVz+f6r2f80u2Eg==
 
 abab@^1.0.3:
   version "1.0.3"
