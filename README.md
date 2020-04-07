@@ -1,3 +1,11 @@
+# DEPRECATED
+
+Just use React Native's Image, suits my needs as of RN 0.62.
+
+Otherwise, this fork works up to RN 0.61. In 0.62, I'm hitting 100% cpu pegged in JSC, haven't investigated further on exactly how. But certain images just completely blocks JSC when loaded in CachedImage.
+
+Issue: https://github.com/facebook/react-native/issues/28537
+
 # react-native-cached-image
 
 CachedImage component for react-native
