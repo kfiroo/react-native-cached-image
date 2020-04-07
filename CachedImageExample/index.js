@@ -87,7 +87,7 @@ class CachedImageExample extends React.Component {
 
     }
 
-    componentWillMount() {
+    UNSAFE_componentWillMount() {
         defaultImageCacheManager.downloadAndCacheUrl(image1);
     }
 
