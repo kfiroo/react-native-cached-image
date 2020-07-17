@@ -3,6 +3,8 @@
 const _ = require('lodash');
 const React = require('react');
 const ReactNative = require('react-native');
+const ImageStylePropTypes = require('ImageStylePropTypes');
+const ViewStylePropTypes = require('ViewStylePropTypes');
 
 const PropTypes = require('prop-types');
 
@@ -39,6 +41,12 @@ function getImageProps(props) {
     return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
+const IMAGE_SPECIFIC_STYLE_PROPS = _.difference(Object.keys(ImageStylePropTypes), Object.keys(ViewStylePropTypes))
+
+function getViewStyles(style) {
+    return _.omit(flattenStyle(style), IMAGE_SPECIFIC_STYLE_PROPS)
+}
+
 const CACHED_IMAGE_REF = 'cachedImage';
 
 class CachedImage extends React.Component {
@@ -52,7 +60,7 @@ class CachedImage extends React.Component {
     };
 
     static defaultProps = {
-            renderImage: props => (<ImageBackground imageStyle={props.style} ref={CACHED_IMAGE_REF} {...props} />),
+            renderImage: props => (<ImageBackground imageStyle={props.imageStyle} ref={CACHED_IMAGE_REF} {...props} />),
             activityIndicatorProps: {},
     };
 
@@ -162,7 +170,9 @@ class CachedImage extends React.Component {
             return this.renderLoader();
         }
         const props = getImageProps(this.props);
-        const style = this.props.style || styles.image;
+        const imageStyle = this.props.style || styles.image;
+        const viewStyle = getViewStyles(imageStyle)
+
         const source = (this.state.isCacheable && this.state.cachedImagePath) ? {
             uri: 'file://' + this.state.cachedImagePath
         } : this.props.source;
@@ -170,14 +180,16 @@ class CachedImage extends React.Component {
             return this.props.renderImage({
                 ...props,
                 key: `${props.key || source.uri}error`,
-                style,
+                style: viewStyle,
+                imageStyle: imageStyle,
                 source: this.props.fallbackSource
             });
         }
         return this.props.renderImage({
             ...props,
             key: props.key || source.uri,
-            style,
+            style: viewStyle,
+            imageStyle: imageStyle,
             source
         });
     }
@@ -193,12 +205,14 @@ class CachedImage extends React.Component {
 
         const source = this.props.defaultSource;
 
+        const viewStyle = getViewStyles(imageStyle)
+
         // if the imageStyle has borderRadius it will break the loading image view on android
         // so we only show the ActivityIndicator
         if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
             if (LoadingIndicator) {
                 return (
-                    <View style={[imageStyle, activityIndicatorStyle]}>
+                    <View style={[viewStyle, activityIndicatorStyle]}>
                         <LoadingIndicator {...activityIndicatorProps} />
                     </View>
                 );
@@ -206,18 +220,19 @@ class CachedImage extends React.Component {
             return (
                 <ActivityIndicator
                     {...activityIndicatorProps}
-                    style={[imageStyle, activityIndicatorStyle]}/>
+                    style={[viewStyle, activityIndicatorStyle]}/>
             );
         }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
         return this.props.renderImage({
             ...imageProps,
-            style: imageStyle,
             key: source.uri,
+            style: viewStyle,
+            imageStyle: imageStyle,
             source,
             children: (
                 LoadingIndicator
-                    ? <View style={[imageStyle, activityIndicatorStyle]}>
+                    ? <View style={[viewStyle, activityIndicatorStyle]}>
                     <LoadingIndicator {...activityIndicatorProps} />
                 </View>
                     : <ActivityIndicator
