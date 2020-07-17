@@ -1,10 +1,10 @@
 {
-  "name": "react-native-cached-image",
-  "version": "1.4.3",
+  "name": "@erhanbicer/react-native-cached-image",
+  "version": "1.4.5",
   "description": "CachedImage component for react-native",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/jest"
+    "test": "jest"
   },
   "jest": {
     "preset": "react-native",
@@ -16,13 +16,14 @@
       "/CachedImageExample/"
     ],
     "modulePathIgnorePatterns": [
+      "/__tests/",
       "/CachedImageExample/"
     ],
     "verbose": true
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kfiroo/react-native-cached-image"
+    "url": "git+https://github.com/erhanbicer/react-native-cached-image.git"
   },
   "keywords": [
     "react-native",
@@ -32,9 +33,9 @@
   "author": "kfiroo <kfirgolan@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kfiroo/react-native-cached-image/issues"
+    "url": "https://github.com/erhanbicer/react-native-cached-image/issues"
   },
-  "homepage": "https://github.com/kfiroo/react-native-cached-image",
+  "homepage": "https://github.com/erhanbicer/react-native-cached-image",
   "files": [
     "index.js",
     "CachedImage.js",
@@ -47,11 +48,12 @@
   ],
   "typings": "./index.d.ts",
   "dependencies": {
+    "@react-native-community/netinfo": "^5.6.1",
     "crypto-js": "3.1.9-1",
     "lodash": "4.17.19",
     "prop-types": "15.5.10",
     "react-native-clcasher": "1.0.0",
-    "react-native-fetch-blob": "0.10.8",
+    "rn-fetch-blob": "0.10.16",
     "url-parse": "1.1.9"
   },
   "devDependencies": {

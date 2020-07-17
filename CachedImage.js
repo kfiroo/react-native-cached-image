@@ -16,10 +16,11 @@ const {
     View,
     ImageBackground,
     ActivityIndicator,
-    NetInfo,
     Platform,
     StyleSheet,
 } = ReactNative;
+
+const NetInfo = require("@react-native-community/netinfo");
 
 const styles = StyleSheet.create({
     image: {
@@ -77,14 +78,14 @@ class CachedImage extends React.Component {
         this.renderLoader = this.renderLoader.bind(this);
     }
 
-    componentWillMount() {
+    componentDidMount() {
         this._isMounted = true;
-        NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
+        this.removeNetInfoEventListener = NetInfo.addEventListener(this.handleConnectivityChange);
         // initial
-        NetInfo.isConnected.fetch()
-            .then(isConnected => {
+        NetInfo.fetch()
+            .then((netInfoState) => {
                 this.safeSetState({
-                    networkAvailable: isConnected
+                    networkAvailable: netInfoState.isInternetReachable
                 });
             });
 
@@ -93,7 +94,10 @@ class CachedImage extends React.Component {
 
     componentWillUnmount() {
         this._isMounted = false;
-        NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+        if (this.removeNetInfoEventListener) {
+            this.removeNetInfoEventListener();
+            delete this.removeNetInfoEventListener;
+        }
     }
 
     componentWillReceiveProps(nextProps) {
@@ -131,9 +135,9 @@ class CachedImage extends React.Component {
         return this.setState(newState);
     }
 
-    handleConnectivityChange(isConnected) {
+    handleConnectivityChange(netInfoState) {
         this.safeSetState({
-            networkAvailable: isConnected
+            networkAvailable: netInfoState.isInternetReachable
         });
     }
 
