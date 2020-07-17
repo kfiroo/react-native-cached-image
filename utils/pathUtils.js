@@ -4,7 +4,7 @@ const _ = require('lodash');
 const URL = require('url-parse');
 const SHA1 = require("crypto-js/sha1");
 
-const defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
+const defaultExtension = 'file';
 
 function serializeObjectKeys(obj) {
     return _(obj)
@@ -33,9 +33,10 @@ function generateCacheKey(url, useQueryParamsInCacheKey = true) {
     const fileName = pathParts.pop();
     const filePath = pathParts.join('/');
 
-    const parts = fileName.split('.');
-    const fileType = parts.length > 1 ? _.toLower(parts.pop()) : '';
-    const type = defaultImageTypes.includes(fileType) ? fileType : 'jpg';
+    // get the extension from the file namec
+    const hasExtension = fileName.indexOf('.') >= 0;
+    const fileExtension = _.last(fileName.split('.')).toLowerCase();
+    const type = hasExtension ? fileExtension : defaultExtension;
 
     const cacheable = filePath + fileName + type + getQueryForCacheKey(parsedUrl, useQueryParamsInCacheKey);
     return SHA1(cacheable) + '.' + type;
