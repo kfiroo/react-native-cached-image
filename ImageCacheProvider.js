@@ -54,7 +54,7 @@ class ImageCacheProvider extends React.Component {
         };
     }
 
-    componentWillMount() {
+    componentDidMount() {
         this.preloadImages(this.props.urlsToPreload);
     }
 
