@@ -3820,7 +3820,7 @@ react-native-cached-image@../:
     lodash "4.17.4"
     prop-types "15.5.10"
     react-native-clcasher "1.0.0"
-    react-native-fetch-blob "0.10.8"
+    rn-fetch-blob "0.10.8"
     url-parse "1.1.9"
 
 react-native-clcasher@1.0.0:
@@ -3829,9 +3829,9 @@ react-native-clcasher@1.0.0:
   dependencies:
     mock-async-storage "^1.0.3"
 
-react-native-fetch-blob@0.10.8:
+rn-fetch-blob@0.10.8:
   version "0.10.8"
-  resolved "https://registry.yarnpkg.com/react-native-fetch-blob/-/react-native-fetch-blob-0.10.8.tgz#4fc256abae0cb5f10e7c41f28c11b3ff330d72a9"
+  resolved "https://registry.yarnpkg.com/rn-fetch-blob/-/rn-fetch-blob-0.10.8.tgz#4fc256abae0cb5f10e7c41f28c11b3ff330d72a9"
   dependencies:
     base-64 "0.1.0"
     glob "7.0.6"
