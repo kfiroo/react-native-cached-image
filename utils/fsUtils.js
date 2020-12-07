@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 
-const RNFetchBlob = require('react-native-fetch-blob').default;
+const RNFetchBlob = require('rn-fetch-blob').default;
 
 const {
     fs
