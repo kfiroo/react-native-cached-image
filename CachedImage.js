@@ -40,27 +40,8 @@ function getImageProps(props) {
     return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
-const CACHED_IMAGE_REF = 'cachedImage';
-
 class CachedImage extends React.Component {
-
-    static propTypes = {
-        renderImage: PropTypes.func.isRequired,
-        activityIndicatorProps: PropTypes.object.isRequired,
-
-        // ImageCacheManager options
-        ...ImageCacheManagerOptionsPropTypes,
-    };
-
-    static defaultProps = {
-        renderImage: props => (<ImageBackground imageStyle={props.style} ref={CACHED_IMAGE_REF} {...props} />),
-        activityIndicatorProps: {},
-    };
-
-    static contextTypes = {
-        getImageCacheManager: PropTypes.func,
-    };
-
+    
     constructor(props) {
         super(props);
         this._isMounted = false;
@@ -70,7 +51,7 @@ class CachedImage extends React.Component {
             cachedImagePath: null,
             networkAvailable: true
         };
-
+        this.CACHED_IMAGE_REF = React.createRef()
         this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
         this.getImageCacheManager = this.getImageCacheManager.bind(this);
         this.safeSetState = this.safeSetState.bind(this);
@@ -78,8 +59,25 @@ class CachedImage extends React.Component {
         this.processSource = this.processSource.bind(this);
         this.renderLoader = this.renderLoader.bind(this);
     }
+    
+    static propTypes = {
+        renderImage: PropTypes.func.isRequired,
+        activityIndicatorProps: PropTypes.object.isRequired,
 
-    componentWillMount() {
+        // ImageCacheManager options
+        ...ImageCacheManagerOptionsPropTypes,
+    };
+
+    static defaultProps = {
+        renderImage: props => (<ImageBackground imageStyle={props.style} ref={this.CACHED_IMAGE_REF} {...props} />),
+        activityIndicatorProps: {},
+    };
+
+    static contextTypes = {
+        getImageCacheManager: PropTypes.func,
+    };
+
+    componentDidMount() {
         this._isMounted = true;
         this.unsubscribable = NetInfo.addEventListener(this.handleConnectivityChange);
         // initial
@@ -103,7 +101,7 @@ class CachedImage extends React.Component {
         // NetInfo.removeEventListener(this.handleConnectivityChange);
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate(nextProps) {
         if (!_.isEqual(this.props.source, nextProps.source)) {
             this.processSource(nextProps.source);
         }
@@ -111,7 +109,7 @@ class CachedImage extends React.Component {
 
     setNativeProps(nativeProps) {
         try {
-            this.refs[CACHED_IMAGE_REF].setNativeProps(nativeProps);
+            this.CACHED_IMAGE_REF.setNativeProps(nativeProps);
         } catch (e) {
             console.error(e);
         }

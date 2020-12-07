@@ -2,7 +2,7 @@
 
 const _ = require('lodash');
 
-const RNFetchBlob = require('rn-fetch-blob-blob').default;
+const RNFetchBlob = require('rn-fetch-blob').default;
 
 const {
     fs
