@@ -64,5 +64,8 @@
     "react-native": "0.59.9",
     "react-test-renderer": "^15.6.1",
     "regenerator-runtime": "^0.11.0"
+  },
+  "peerDependencies": {
+    "@react-native-community/netinfo": "^5.9.10"
   }
 }

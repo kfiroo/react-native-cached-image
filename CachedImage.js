@@ -1,9 +1,9 @@
-const _ = require('lodash');
-const React = require('react');
-const ReactNative = require('react-native');
-const PropTypes = require('prop-types');
-const ImageCacheManagerOptionsPropTypes = require('./ImageCacheManagerOptionsPropTypes');
-const ImageCacheManager = require('./ImageCacheManager');
+const _ = require("lodash");
+const React = require("react");
+const ReactNative = require("react-native");
+const PropTypes = require("prop-types");
+const ImageCacheManagerOptionsPropTypes = require("./ImageCacheManagerOptionsPropTypes");
+const ImageCacheManager = require("./ImageCacheManager");
 
 const flattenStyle = ReactNative.StyleSheet.flatten;
 
@@ -11,37 +11,37 @@ const {
   View,
   ImageBackground,
   ActivityIndicator,
-  NetInfo,
   Platform,
   StyleSheet,
   Animated,
 } = ReactNative;
+import NetInfo from "@react-native-community/netinfo";
 
 const styles = StyleSheet.create({
   image: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   loader: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   loaderPlaceholder: {
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
 function getImageProps(props) {
   return _.omit(props, [
-    'source',
-    'defaultSource',
-    'fallbackSource',
-    'LoadingIndicator',
-    'loadingIndicatorProps',
-    'style',
-    'useQueryParamsInCacheKey',
-    'renderImage',
-    'resolveHeaders',
+    "source",
+    "defaultSource",
+    "fallbackSource",
+    "LoadingIndicator",
+    "loadingIndicatorProps",
+    "style",
+    "useQueryParamsInCacheKey",
+    "renderImage",
+    "resolveHeaders",
   ]);
 }
 
@@ -57,7 +57,9 @@ class CachedImage extends React.Component {
       downloadProgress: new Animated.Value(0),
     };
     this.imageRefSetter = this.imageRefSetter.bind(this);
-    this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(this);
+    this.getImageCacheManagerOptions = this.getImageCacheManagerOptions.bind(
+      this
+    );
     this.getImageCacheManager = this.getImageCacheManager.bind(this);
     this.safeSetState = this.safeSetState.bind(this);
     this.handleConnectivityChange = this.handleConnectivityChange.bind(this);
@@ -70,9 +72,11 @@ class CachedImage extends React.Component {
   componentWillMount() {
     const { source, callbacks } = this.props;
     this._isMounted = true;
-    NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
+    this._netInfoSubscription = NetInfo.addEventListener(
+      this.handleConnectivityChange
+    );
     // initial
-    NetInfo.isConnected.fetch().then(isConnected => {
+    NetInfo.fetch().then(({ isConnected }) => {
       this.safeSetState({
         networkAvailable: isConnected,
       });
@@ -102,7 +106,7 @@ class CachedImage extends React.Component {
 
   componentWillUnmount() {
     this._isMounted = false;
-    NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+    if (this._netInfoSubscription) this._netInfoSubscription();
   }
 
   setNativeProps(nativeProps) {
@@ -134,7 +138,7 @@ class CachedImage extends React.Component {
     this.setState(newState);
   }
 
-  handleConnectivityChange(isConnected) {
+  handleConnectivityChange({ isConnected }) {
     this.safeSetState({
       networkAvailable: isConnected,
     });
@@ -160,14 +164,14 @@ class CachedImage extends React.Component {
     return downloadProgress.interpolate({
       inputRange: [0, 1],
       outputRange: [-100, 0],
-      extrapolate: 'clamp',
+      extrapolate: "clamp",
     });
   }
 
   processSource(source, callbacks) {
     const { state, props } = this;
     const { downloadProgress } = state;
-    const url = _.get(source, ['uri'], null);
+    const url = _.get(source, ["uri"], null);
     const options = this.getImageCacheManagerOptions();
     const imageCacheManager = this.getImageCacheManager();
     downloadProgress.setValue(0);
@@ -175,13 +179,13 @@ class CachedImage extends React.Component {
 
     imageCacheManager
       .downloadAndCacheUrl(url, options, callbacks)
-      .then(cachedImagePath => {
+      .then((cachedImagePath) => {
         this.safeSetState({
           cachedImagePath,
           processingSource: false,
         });
       })
-      .catch(err => {
+      .catch((err) => {
         // console.warn(err);
         this.safeSetState({
           cachedImagePath: null,
@@ -202,13 +206,19 @@ class CachedImage extends React.Component {
     const { downloadProgress } = this.state;
     const imageProps = getImageProps(this.props);
     const imageStyle = [propsStyle, styles.loaderPlaceholder];
-    const loadingIndicatorProps = _.omit(propsActivityIndicatorProps, ['style']);
-    const activityIndicatorStyle = propsActivityIndicatorProps.style || styles.loader;
+    const loadingIndicatorProps = _.omit(propsActivityIndicatorProps, [
+      "style",
+    ]);
+    const activityIndicatorStyle =
+      propsActivityIndicatorProps.style || styles.loader;
     const LoadingIndicator = propsLoadingIndicator;
     const source = propsDefaultSource;
     // if the imageStyle has borderRadius it will break the loading image view on android
     // so we only show the ActivityIndicator
-    if (!source || (Platform.OS === 'android' && flattenStyle(imageStyle).borderRadius)) {
+    if (
+      !source ||
+      (Platform.OS === "android" && flattenStyle(imageStyle).borderRadius)
+    ) {
       if (LoadingIndicator) {
         return (
           <View style={[imageStyle, activityIndicatorStyle]}>
@@ -238,7 +248,10 @@ class CachedImage extends React.Component {
           <LoadingIndicator {...loadingIndicatorProps} />
         </View>
       ) : (
-        <ActivityIndicator {...loadingIndicatorProps} style={activityIndicatorStyle} />
+        <ActivityIndicator
+          {...loadingIndicatorProps}
+          style={activityIndicatorStyle}
+        />
       ),
     });
   }
@@ -295,9 +308,15 @@ CachedImage.propTypes = {
 };
 
 CachedImage.defaultProps = {
-  renderImage: props => {
+  renderImage: (props) => {
     const { style } = props;
-    return <ImageBackground imageStyle={style} ref={this.imageRefSetter} {...props} />;
+    return (
+      <ImageBackground
+        imageStyle={style}
+        ref={this.imageRefSetter}
+        {...props}
+      />
+    );
   },
   style: {},
   loadingIndicatorProps: {},

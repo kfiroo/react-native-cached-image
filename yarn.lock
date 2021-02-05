@@ -689,6 +689,11 @@
     xcode "^2.0.0"
     xmldoc "^0.4.0"
 
+"@react-native-community/netinfo@^5.9.10":
+  version "5.9.10"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-5.9.10.tgz#97d3a9fa62a3a4838ec7a6ec91cfec5a26e365b6"
+  integrity sha512-1NPlBA2Hu/KWc3EnQcDRPRX0x8Dg9tuQlQQVWVQjlg+u+PjCq7ANEtbikOFKp5yQqfF8tqzU5+84/IfDO8zpiA==
+
 abab@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/abab/-/abab-1.0.4.tgz#5faad9c2c07f60dd76770f71cf025b62a63cfd4e"
