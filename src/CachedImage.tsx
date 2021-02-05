@@ -1,9 +1,9 @@
-const _ = require("lodash");
-const React = require("react");
-const ReactNative = require("react-native");
-const PropTypes = require("prop-types");
-const ImageCacheManagerOptionsPropTypes = require("./ImageCacheManagerOptionsPropTypes");
-const ImageCacheManager = require("./ImageCacheManager");
+import _ from "lodash";
+import React from "react";
+import ReactNative from "react-native";
+import PropTypes from "prop-types";
+import { ImageCacheManagerOptions } from "./typings";
+import ImageCacheManager from "./ImageCacheManager";
 
 const flattenStyle = ReactNative.StyleSheet.flatten;
 
@@ -294,18 +294,20 @@ class CachedImage extends React.Component {
 
 module.exports = CachedImage;
 
-CachedImage.propTypes = {
-  renderImage: PropTypes.func,
-  loadingIndicatorProps: PropTypes.shape({}),
-  callbacks: PropTypes.exact({
-    onStartDownloading: PropTypes.func,
-    onFinishDownloading: PropTypes.func,
-    progressTracker: PropTypes.func,
-  }),
-  style: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]),
-  // ImageCacheManager options
-  ...ImageCacheManagerOptionsPropTypes,
-};
+CachedImage.propTypes =
+  ReactNative.ImagePropTypes &
+  {
+    renderImage: PropTypes.func,
+    loadingIndicatorProps: PropTypes.shape({}),
+    callbacks: PropTypes.exact({
+      onStartDownloading: PropTypes.func,
+      onFinishDownloading: PropTypes.func,
+      progressTracker: PropTypes.func,
+    }),
+    style: PropTypes.oneOfType([PropTypes.shape({}), PropTypes.array]),
+    // ImageCacheManager options
+    ...ImageCacheManagerOptionsPropTypes,
+  };
 
 CachedImage.defaultProps = {
   renderImage: (props) => {
