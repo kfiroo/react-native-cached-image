@@ -1,20 +1,5 @@
 import { ObjectLiteral } from './typings';
-declare const ImageCacheManager: (defaultOptions?: {}, urlCache?: any, fs?: {
-    getCacheDir(): string;
-    downloadFile(fromUrl: any, toFile: any, headers: any, callbacks: any): Promise<any>;
-    deleteFile(filePath: any): Promise<any>;
-    copyFile(fromFile: any, toFile: any): Promise<any>;
-    cleanDir(dirPath: any): Promise<any>;
-    getDirInfo(dirPath: any): Promise<{
-        file: any[];
-        size: number;
-    }>;
-    exists(path: any): Promise<boolean>;
-}, path?: {
-    getImageFilePath(url: any, cacheLocation: any): string;
-    getImageRelativeFilePath(url: any): string;
-    getCacheableUrl(url: any, useQueryParamsInCacheKey: any): string;
-}) => {
+declare const ImageCacheManager: (defaultOptions?: {}, urlCache?: any) => {
     /**
      * download an image and cache the result according to the given options
      * @param url
@@ -49,7 +34,7 @@ declare const ImageCacheManager: (defaultOptions?: {}, urlCache?: any, fs?: {
      * @returns {Promise.<{file: Array, size: Number}>}
      */
     getCacheInfo: (options?: TOptions | undefined) => Promise<{
-        file: any[];
+        files: unknown[];
         size: number;
     }>;
 };

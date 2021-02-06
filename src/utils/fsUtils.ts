@@ -1,22 +1,22 @@
-import _ from "lodash";
-import RNFetchBlob from "rn-fetch-blob";
-const { fs } = RNFetchBlob;
+import _ from 'lodash'
+import RNFetchBlob from 'rn-fetch-blob'
+const { fs } = RNFetchBlob
 
-const activeDownloads = {};
+const activeDownloads: any = {}
 
-function getDirPath(path) {
+const getDirPath = (path: string) => {
   // if path is a file (has ext) remove it
   if (
-    path.charAt(path.length - 4) === "." ||
-    path.charAt(path.length - 5) === "."
+    path.charAt(path.length - 4) === '.' ||
+    path.charAt(path.length - 5) === '.'
   ) {
-    return _.initial(path.split("/")).join("/");
+    return _.initial(path.split('/')).join('/')
   }
-  return path;
+  return path
 }
 
-function ensurePath(path) {
-  const dirPath = getDirPath(path);
+const ensurePath = (path: string) => {
+  const dirPath = getDirPath(path)
   return fs
     .isDir(dirPath)
     .then((isDir) => {
@@ -29,50 +29,46 @@ function ensurePath(path) {
             .then(() => fs.isDir(dirPath))
             .then((isDir) => {
               if (!isDir) {
-                throw new Error("Invalid cacheLocation");
+                throw new Error('Invalid cacheLocation')
               }
             })
-        );
+        )
       }
     })
     .catch((err) => {
       // ignore folder already exists errors
-      if (err.message.includes("folder already exists")) {
-        return;
+      if (err.message.includes('folder already exists')) {
+        return
       }
-      throw err;
-    });
+      throw err
+    })
 }
 
-function collectFilesInfo(basePath) {
-  return fs
-    .stat(basePath)
-    .then((info) => {
-      if (info.type === "file") {
-        return [info];
+const collectFilesInfo = (basePath: string) => {
+  fs.stat(basePath)
+    .then((info: any) => {
+      if (info.type === 'file') {
+        return [info]
       }
       return fs.ls(basePath).then((files) => {
         const promises = _.map(files, (file) => {
-          return collectFilesInfo(`${basePath}/${file}`);
-        });
-        return Promise.all(promises);
-      });
+          return collectFilesInfo(`${basePath}/${file}`)
+        })
+        return Promise.all(promises)
+      })
     })
     .catch((err) => {
-      return [];
-    });
+      return []
+    })
 }
 
-/**
- * wrapper around common filesystem actions
- */
-export default {
+const fsUtils = {
   /**
    * returns the local cache dir
    * @returns {String}
    */
   getCacheDir() {
-    return `${fs.dirs.CacheDir}/imagesCacheDir`;
+    return `${fs.dirs.CacheDir}/imagesCacheDir`
   },
 
   /**
@@ -85,70 +81,70 @@ export default {
    * @param headers   Object with headers to use when downloading the file
    * @returns {Promise}
    */
-  downloadFile(fromUrl, toFile, headers, callbacks) {
+  downloadFile(fromUrl: string, toFile: string, headers: any, callbacks: any) {
     const {
       onStartDownloading,
       onFinishDownloading,
-      progressTracker,
-    } = callbacks;
-    if (onStartDownloading) onStartDownloading();
+      progressTracker
+    } = callbacks
+    if (onStartDownloading) onStartDownloading()
 
     // use toFile as the key as is was created using the cacheKey
     if (!_.has(activeDownloads, toFile)) {
       // using a temporary file, if the download is accidentally interrupted, it will not produce a disabled file
-      const tmpFile = `${toFile}.tmp`;
+      const tmpFile = `${toFile}.tmp`
       // create an active download for this file
       activeDownloads[toFile] = ensurePath(toFile).then(() =>
         RNFetchBlob.config({
-          path: tmpFile,
+          path: tmpFile
         })
-          .fetch("GET", fromUrl, headers)
+          .fetch('GET', fromUrl, headers)
           .progress((received, total) => {
-            if (progressTracker) progressTracker(received, total);
+            if (progressTracker) progressTracker(received, total)
           })
-          .then((res) => {
+          .then((res: any): any => {
             if (res.respInfo.status === 304) {
-              return Promise.resolve(toFile);
+              return Promise.resolve(toFile)
             }
-            const status = Math.floor(res.respInfo.status / 100);
+            const status = Math.floor(res.respInfo.status / 100)
             if (status !== 2) {
               // TODO - log / return error?
               return Promise.reject(
                 new Error("Couldn't retreive the image asset")
-              );
+              )
             }
 
             return RNFetchBlob.fs.stat(tmpFile).then((fileStats) => {
               // Verify if the content was fully downloaded!
               if (
-                res.respInfo.headers["Content-Length"] &&
-                res.respInfo.headers["Content-Length"] !== `${fileStats.size}`
+                res.respInfo.headers['Content-Length'] &&
+                res.respInfo.headers['Content-Length'] !== `${fileStats.size}`
               )
                 return Promise.reject(
-                  new Error("Image asset is not fully downloaded")
-                );
+                  new Error('Image asset is not fully downloaded')
+                )
 
-              if (onFinishDownloading) onFinishDownloading();
+              if (onFinishDownloading) onFinishDownloading()
 
               // the download is complete and rename the temporary file
-              return fs.mv(tmpFile, toFile);
-            });
+              return fs.mv(tmpFile, toFile)
+            })
           })
           .catch((error) => {
             // cleanup. will try re-download on next CachedImage mount.
-            this.deleteFile(tmpFile);
-            delete activeDownloads[toFile];
-            return Promise.reject(new Error("Download failed"));
+            this.deleteFile(tmpFile)
+            delete activeDownloads[toFile]
+            return Promise.reject(new Error('Download failed'))
           })
           .then(() => {
             // cleanup
-            this.deleteFile(tmpFile);
-            delete activeDownloads[toFile];
-            return toFile;
+            this.deleteFile(tmpFile)
+            delete activeDownloads[toFile]
+            return toFile
           })
-      );
+      )
     }
-    return activeDownloads[toFile];
+    return activeDownloads[toFile]
   },
 
   /**
@@ -157,14 +153,14 @@ export default {
    * @param filePath
    * @returns {Promise}
    */
-  deleteFile(filePath) {
+  deleteFile(filePath: string) {
     return fs
       .stat(filePath)
-      .then((res) => res && res.type === "file")
-      .then((exists) => exists && fs.unlink(filePath))
+      .then((res) => res && res.type === 'file')
+      .then((exists: any) => exists && fs.unlink(filePath))
       .catch((err) => {
         // swallow error to always resolve
-      });
+      })
   },
 
   /**
@@ -173,8 +169,8 @@ export default {
    * @param toFile
    * @returns {Promise}
    */
-  copyFile(fromFile, toFile) {
-    return ensurePath(toFile).then(() => fs.cp(fromFile, toFile));
+  copyFile(fromFile: string, toFile: string) {
+    return ensurePath(toFile).then(() => fs.cp(fromFile, toFile))
   },
 
   /**
@@ -182,12 +178,12 @@ export default {
    * @param dirPath
    * @returns {Promise}
    */
-  cleanDir(dirPath) {
+  cleanDir(dirPath: string) {
     return fs
       .isDir(dirPath)
-      .then((isDir) => isDir && fs.unlink(dirPath))
+      .then((isDir: any) => isDir && fs.unlink(dirPath))
       .catch(() => {})
-      .then(() => ensurePath(dirPath));
+      .then(() => ensurePath(dirPath))
   },
 
   /**
@@ -195,26 +191,28 @@ export default {
    * @param dirPath
    * @returns {Promise.<{file:Array, size:Number}>}
    */
-  getDirInfo(dirPath) {
+  getDirInfo(dirPath: string) {
     return fs
       .isDir(dirPath)
       .then((isDir) => {
         if (isDir) {
-          return collectFilesInfo(dirPath);
+          return collectFilesInfo(dirPath)
         }
-        throw new Error("Dir does not exists");
+        throw new Error('Dir does not exists')
       })
       .then((filesInfo) => {
-        const files = _.flattenDeep(filesInfo);
-        const size = _.sumBy(files, "size");
+        const files = _.flattenDeep(filesInfo as any)
+        const size = _.sumBy(files, 'size')
         return {
           files,
-          size,
-        };
-      });
+          size
+        }
+      })
   },
 
-  exists(path) {
-    return fs.exists(path);
-  },
-};
+  exists(path: string) {
+    return fs.exists(path)
+  }
+}
+
+export default fsUtils

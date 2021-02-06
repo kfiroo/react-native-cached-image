@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  ScrollView,
-  Button,
-  AppRegistry,
-  ListView,
-  Alert,
-} from 'react-native';
+import {View, ScrollView, Button, ListView, Alert} from 'react-native';
 
 import _ from 'lodash';
 
@@ -17,7 +10,7 @@ import {
 } from 'react-native-cached-image';
 import styles from './styles';
 
-const LOADING_IMG = require('./loading.jpg');
+const LOADING_IMG = require('./assets/loading.jpg');
 
 const image1 =
   'https://wallpaperbrowse.com/media/images/bcf39e88-5731-43bb-9d4b-e5b3b2b1fdf2.jpg';
@@ -143,4 +136,4 @@ class CachedImageExample extends React.Component {
   }
 }
 
-AppRegistry.registerComponent('CachedImageExample', () => CachedImageExample);
+export default CachedImageExample;

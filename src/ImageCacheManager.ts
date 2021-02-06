@@ -15,12 +15,7 @@ const defaultDefaultOptions = {
   allowSelfSignedSSL: false
 }
 
-const ImageCacheManager = (
-  defaultOptions = {},
-  urlCache = MemoryCache,
-  fs = fsUtils,
-  path = pathUtils
-) => {
+const ImageCacheManager = (defaultOptions = {}, urlCache = MemoryCache) => {
   // apply default options
   defaults(defaultOptions, defaultDefaultOptions)
 
@@ -43,7 +38,7 @@ const ImageCacheManager = (
     // allow CachedImage to provide custom options
     defaults(options, defaultOptions)
     // cacheableUrl contains only the needed query params
-    const cacheableUrl = path.getCacheableUrl(
+    const cacheableUrl = pathUtils.getCacheableUrl(
       url,
       options?.useQueryParamsInCacheKey
     )
@@ -59,7 +54,7 @@ const ImageCacheManager = (
           // console.log('ImageCacheManager: url cache hit', cacheableUrl);
           const cachedFilePath = `${options?.cacheLocation}/${fileRelativePath}`
 
-          return fs.exists(cachedFilePath).then((exists) => {
+          return fsUtils.exists(cachedFilePath).then((exists) => {
             if (exists) {
               return cachedFilePath
             }
@@ -68,12 +63,14 @@ const ImageCacheManager = (
         })
         // url is not found in the cache or is expired
         .catch(() => {
-          const fileRelativePath = path.getImageRelativeFilePath(cacheableUrl)
+          const fileRelativePath = pathUtils.getImageRelativeFilePath(
+            cacheableUrl
+          )
           const filePath = `${options?.cacheLocation}/${fileRelativePath}`
 
           // remove expired file if exists
           return (
-            fs
+            fsUtils
               .deleteFile(filePath)
               // get the image to cache (download / copy / etc)
               .then(() => getCachedFile?.(filePath))
@@ -97,7 +94,7 @@ const ImageCacheManager = (
      */
     downloadAndCacheUrl: (url: string, options?: TOptions, callbacks?: any) => {
       return cacheUrl(url, options || {}, (filePath: string) =>
-        fs.downloadFile(url, filePath, options?.headers, callbacks)
+        fsUtils.downloadFile(url, filePath, options?.headers, callbacks)
       )
     },
 
@@ -110,7 +107,7 @@ const ImageCacheManager = (
      */
     seedAndCacheUrl: (url: string, seedPath: string, options?: TOptions) =>
       cacheUrl(url, options || {}, (filePath: string) =>
-        fs.copyFile(seedPath, filePath)
+        fsUtils.copyFile(seedPath, filePath)
       ),
 
     /**
@@ -124,11 +121,11 @@ const ImageCacheManager = (
         return Promise.reject(new Error('Url is not cacheable'))
       }
       defaults(options, defaultOptions)
-      const cacheableUrl = path.getCacheableUrl(
+      const cacheableUrl = pathUtils.getCacheableUrl(
         url,
         options?.useQueryParamsInCacheKey
       )
-      const filePath = path.getImageFilePath(
+      const filePath = pathUtils.getImageFilePath(
         cacheableUrl,
         options?.cacheLocation
       )
@@ -137,7 +134,7 @@ const ImageCacheManager = (
         urlCache
           .remove(cacheableUrl)
           // remove file from disc
-          .then(() => fs.deleteFile(filePath))
+          .then(() => fsUtils.deleteFile(filePath))
       )
     },
 
@@ -148,7 +145,9 @@ const ImageCacheManager = (
      */
     clearCache: (options?: TOptions) => {
       defaults(options, defaultOptions)
-      return urlCache.flush().then(() => fs.cleanDir(options?.cacheLocation))
+      return urlCache
+        .flush()
+        .then(() => fsUtils.cleanDir(options?.cacheLocation || ''))
     },
 
     /**
@@ -158,7 +157,7 @@ const ImageCacheManager = (
      */
     getCacheInfo: (options?: TOptions) => {
       defaults(options || {}, defaultOptions)
-      return fs.getDirInfo(options?.cacheLocation)
+      return fsUtils.getDirInfo(options?.cacheLocation || '')
     }
   }
 }

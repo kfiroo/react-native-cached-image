@@ -1,5 +1,5 @@
 /// <reference types="react" />
-import { ImageProps, StyleSheetProperties } from 'react-native';
+import { ImageProps, ImageStyle } from 'react-native';
 import { TOptions } from '../ImageCacheManager';
 import { ObjectLiteral } from '../typings';
 declare type Props = ImageProps & /*  ImageCacheManager options */ {
@@ -11,7 +11,7 @@ declare type Props = ImageProps & /*  ImageCacheManager options */ {
         progressTracker?: () => any;
     };
     LoadingIndicator?: (args: any) => JSX.Element;
-    style?: StyleSheetProperties;
+    style?: ImageStyle;
     fallbackSource?: string;
 };
 declare const CachedImage: ({ LoadingIndicator, fallbackSource, loadingIndicatorProps, callbacks, style, cacheManagerOptions, defaultSource, ...imageProps }: Props) => JSX.Element;

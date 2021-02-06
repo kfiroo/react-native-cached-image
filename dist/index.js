@@ -6,7 +6,6 @@ var _$1 = require('lodash');
 var RNFetchBlob = require('rn-fetch-blob');
 var reactNative = require('react-native');
 var React = require('react');
-var netinfo = require('@react-native-community/netinfo');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -1197,325 +1196,277 @@ var defaults = _baseRest(function(object, sources) {
 
 var defaults_1 = defaults;
 
-const { fs } = RNFetchBlob__default['default'];
-
-const activeDownloads = {};
-
-function getDirPath(path) {
-  // if path is a file (has ext) remove it
-  if (
-    path.charAt(path.length - 4) === "." ||
-    path.charAt(path.length - 5) === "."
-  ) {
-    return ___default['default'].initial(path.split("/")).join("/");
-  }
-  return path;
-}
-
-function ensurePath(path) {
-  const dirPath = getDirPath(path);
-  return fs
-    .isDir(dirPath)
-    .then((isDir) => {
-      if (!isDir) {
-        return (
-          fs
-            .mkdir(dirPath)
-            // check if dir has indeed been created because
-            // there's no exception on incorrect user-defined paths (?)...
-            .then(() => fs.isDir(dirPath))
-            .then((isDir) => {
-              if (!isDir) {
-                throw new Error("Invalid cacheLocation");
-              }
-            })
-        );
-      }
-    })
-    .catch((err) => {
-      // ignore folder already exists errors
-      if (err.message.includes("folder already exists")) {
-        return;
-      }
-      throw err;
-    });
-}
-
-function collectFilesInfo(basePath) {
-  return fs
-    .stat(basePath)
-    .then((info) => {
-      if (info.type === "file") {
-        return [info];
-      }
-      return fs.ls(basePath).then((files) => {
-        const promises = ___default['default'].map(files, (file) => {
-          return collectFilesInfo(`${basePath}/${file}`);
-        });
-        return Promise.all(promises);
-      });
-    })
-    .catch((err) => {
-      return [];
-    });
-}
-
-/**
- * wrapper around common filesystem actions
- */
-var fsUtils = {
-  /**
-   * returns the local cache dir
-   * @returns {String}
-   */
-  getCacheDir() {
-    return `${fs.dirs.CacheDir}/imagesCacheDir`;
-  },
-
-  /**
-   * returns a promise that is resolved when the download of the requested file
-   * is complete and the file is saved.
-   * if the download fails, or was stopped the partial file is deleted, and the
-   * promise is rejected
-   * @param fromUrl   String source url
-   * @param toFile    String destination path
-   * @param headers   Object with headers to use when downloading the file
-   * @returns {Promise}
-   */
-  downloadFile(fromUrl, toFile, headers, callbacks) {
-    const {
-      onStartDownloading,
-      onFinishDownloading,
-      progressTracker,
-    } = callbacks;
-    if (onStartDownloading) onStartDownloading();
-
-    // use toFile as the key as is was created using the cacheKey
-    if (!___default['default'].has(activeDownloads, toFile)) {
-      // using a temporary file, if the download is accidentally interrupted, it will not produce a disabled file
-      const tmpFile = `${toFile}.tmp`;
-      // create an active download for this file
-      activeDownloads[toFile] = ensurePath(toFile).then(() =>
-        RNFetchBlob__default['default'].config({
-          path: tmpFile,
-        })
-          .fetch("GET", fromUrl, headers)
-          .progress((received, total) => {
-            if (progressTracker) progressTracker(received, total);
-          })
-          .then((res) => {
-            if (res.respInfo.status === 304) {
-              return Promise.resolve(toFile);
-            }
-            const status = Math.floor(res.respInfo.status / 100);
-            if (status !== 2) {
-              // TODO - log / return error?
-              return Promise.reject(
-                new Error("Couldn't retreive the image asset")
-              );
-            }
-
-            return RNFetchBlob__default['default'].fs.stat(tmpFile).then((fileStats) => {
-              // Verify if the content was fully downloaded!
-              if (
-                res.respInfo.headers["Content-Length"] &&
-                res.respInfo.headers["Content-Length"] !== `${fileStats.size}`
-              )
-                return Promise.reject(
-                  new Error("Image asset is not fully downloaded")
-                );
-
-              if (onFinishDownloading) onFinishDownloading();
-
-              // the download is complete and rename the temporary file
-              return fs.mv(tmpFile, toFile);
-            });
-          })
-          .catch((error) => {
-            // cleanup. will try re-download on next CachedImage mount.
-            this.deleteFile(tmpFile);
-            delete activeDownloads[toFile];
-            return Promise.reject(new Error("Download failed"));
-          })
-          .then(() => {
-            // cleanup
-            this.deleteFile(tmpFile);
-            delete activeDownloads[toFile];
-            return toFile;
-          })
-      );
+var fs = RNFetchBlob__default['default'].fs;
+var activeDownloads = {};
+var getDirPath = function (path) {
+    // if path is a file (has ext) remove it
+    if (path.charAt(path.length - 4) === '.' ||
+        path.charAt(path.length - 5) === '.') {
+        return ___default['default'].initial(path.split('/')).join('/');
     }
-    return activeDownloads[toFile];
-  },
-
-  /**
-   * remove the file in filePath if it exists.
-   * this method always resolves
-   * @param filePath
-   * @returns {Promise}
-   */
-  deleteFile(filePath) {
+    return path;
+};
+var ensurePath = function (path) {
+    var dirPath = getDirPath(path);
     return fs
-      .stat(filePath)
-      .then((res) => res && res.type === "file")
-      .then((exists) => exists && fs.unlink(filePath))
-      .catch((err) => {
-        // swallow error to always resolve
-      });
-  },
-
-  /**
-   * copy a file from fromFile to toFile
-   * @param fromFile
-   * @param toFile
-   * @returns {Promise}
-   */
-  copyFile(fromFile, toFile) {
-    return ensurePath(toFile).then(() => fs.cp(fromFile, toFile));
-  },
-
-  /**
-   * remove the contents of dirPath
-   * @param dirPath
-   * @returns {Promise}
-   */
-  cleanDir(dirPath) {
-    return fs
-      .isDir(dirPath)
-      .then((isDir) => isDir && fs.unlink(dirPath))
-      .catch(() => {})
-      .then(() => ensurePath(dirPath));
-  },
-
-  /**
-   * get info about files in a folder
-   * @param dirPath
-   * @returns {Promise.<{file:Array, size:Number}>}
-   */
-  getDirInfo(dirPath) {
-    return fs
-      .isDir(dirPath)
-      .then((isDir) => {
-        if (isDir) {
-          return collectFilesInfo(dirPath);
+        .isDir(dirPath)
+        .then(function (isDir) {
+        if (!isDir) {
+            return (fs
+                .mkdir(dirPath)
+                // check if dir has indeed been created because
+                // there's no exception on incorrect user-defined paths (?)...
+                .then(function () { return fs.isDir(dirPath); })
+                .then(function (isDir) {
+                if (!isDir) {
+                    throw new Error('Invalid cacheLocation');
+                }
+            }));
         }
-        throw new Error("Dir does not exists");
-      })
-      .then((filesInfo) => {
-        const files = ___default['default'].flattenDeep(filesInfo);
-        const size = ___default['default'].sumBy(files, "size");
-        return {
-          files,
-          size,
-        };
-      });
-  },
-
-  exists(path) {
-    return fs.exists(path);
-  },
+    })
+        .catch(function (err) {
+        // ignore folder already exists errors
+        if (err.message.includes('folder already exists')) {
+            return;
+        }
+        throw err;
+    });
+};
+var collectFilesInfo = function (basePath) {
+    fs.stat(basePath)
+        .then(function (info) {
+        if (info.type === 'file') {
+            return [info];
+        }
+        return fs.ls(basePath).then(function (files) {
+            var promises = ___default['default'].map(files, function (file) {
+                return collectFilesInfo(basePath + "/" + file);
+            });
+            return Promise.all(promises);
+        });
+    })
+        .catch(function (err) {
+        return [];
+    });
+};
+var fsUtils = {
+    /**
+     * returns the local cache dir
+     * @returns {String}
+     */
+    getCacheDir: function () {
+        return fs.dirs.CacheDir + "/imagesCacheDir";
+    },
+    /**
+     * returns a promise that is resolved when the download of the requested file
+     * is complete and the file is saved.
+     * if the download fails, or was stopped the partial file is deleted, and the
+     * promise is rejected
+     * @param fromUrl   String source url
+     * @param toFile    String destination path
+     * @param headers   Object with headers to use when downloading the file
+     * @returns {Promise}
+     */
+    downloadFile: function (fromUrl, toFile, headers, callbacks) {
+        var _this = this;
+        var onStartDownloading = callbacks.onStartDownloading, onFinishDownloading = callbacks.onFinishDownloading, progressTracker = callbacks.progressTracker;
+        if (onStartDownloading)
+            onStartDownloading();
+        // use toFile as the key as is was created using the cacheKey
+        if (!___default['default'].has(activeDownloads, toFile)) {
+            // using a temporary file, if the download is accidentally interrupted, it will not produce a disabled file
+            var tmpFile_1 = toFile + ".tmp";
+            // create an active download for this file
+            activeDownloads[toFile] = ensurePath(toFile).then(function () {
+                return RNFetchBlob__default['default'].config({
+                    path: tmpFile_1
+                })
+                    .fetch('GET', fromUrl, headers)
+                    .progress(function (received, total) {
+                    if (progressTracker)
+                        progressTracker(received, total);
+                })
+                    .then(function (res) {
+                    if (res.respInfo.status === 304) {
+                        return Promise.resolve(toFile);
+                    }
+                    var status = Math.floor(res.respInfo.status / 100);
+                    if (status !== 2) {
+                        // TODO - log / return error?
+                        return Promise.reject(new Error("Couldn't retreive the image asset"));
+                    }
+                    return RNFetchBlob__default['default'].fs.stat(tmpFile_1).then(function (fileStats) {
+                        // Verify if the content was fully downloaded!
+                        if (res.respInfo.headers['Content-Length'] &&
+                            res.respInfo.headers['Content-Length'] !== "" + fileStats.size)
+                            return Promise.reject(new Error('Image asset is not fully downloaded'));
+                        if (onFinishDownloading)
+                            onFinishDownloading();
+                        // the download is complete and rename the temporary file
+                        return fs.mv(tmpFile_1, toFile);
+                    });
+                })
+                    .catch(function (error) {
+                    // cleanup. will try re-download on next CachedImage mount.
+                    _this.deleteFile(tmpFile_1);
+                    delete activeDownloads[toFile];
+                    return Promise.reject(new Error('Download failed'));
+                })
+                    .then(function () {
+                    // cleanup
+                    _this.deleteFile(tmpFile_1);
+                    delete activeDownloads[toFile];
+                    return toFile;
+                });
+            });
+        }
+        return activeDownloads[toFile];
+    },
+    /**
+     * remove the file in filePath if it exists.
+     * this method always resolves
+     * @param filePath
+     * @returns {Promise}
+     */
+    deleteFile: function (filePath) {
+        return fs
+            .stat(filePath)
+            .then(function (res) { return res && res.type === 'file'; })
+            .then(function (exists) { return exists && fs.unlink(filePath); })
+            .catch(function (err) {
+            // swallow error to always resolve
+        });
+    },
+    /**
+     * copy a file from fromFile to toFile
+     * @param fromFile
+     * @param toFile
+     * @returns {Promise}
+     */
+    copyFile: function (fromFile, toFile) {
+        return ensurePath(toFile).then(function () { return fs.cp(fromFile, toFile); });
+    },
+    /**
+     * remove the contents of dirPath
+     * @param dirPath
+     * @returns {Promise}
+     */
+    cleanDir: function (dirPath) {
+        return fs
+            .isDir(dirPath)
+            .then(function (isDir) { return isDir && fs.unlink(dirPath); })
+            .catch(function () { })
+            .then(function () { return ensurePath(dirPath); });
+    },
+    /**
+     * get info about files in a folder
+     * @param dirPath
+     * @returns {Promise.<{file:Array, size:Number}>}
+     */
+    getDirInfo: function (dirPath) {
+        return fs
+            .isDir(dirPath)
+            .then(function (isDir) {
+            if (isDir) {
+                return collectFilesInfo(dirPath);
+            }
+            throw new Error('Dir does not exists');
+        })
+            .then(function (filesInfo) {
+            var files = ___default['default'].flattenDeep(filesInfo);
+            var size = ___default['default'].sumBy(files, 'size');
+            return {
+                files: files,
+                size: size
+            };
+        });
+    },
+    exists: function (path) {
+        return fs.exists(path);
+    }
 };
 
-const _ = require("lodash");
-const URL = require("url-parse");
-const SHA1 = require("crypto-js/sha1");
-
-const defaultImageTypes = ["png", "jpeg", "jpg", "gif", "bmp", "tiff", "tif"];
-
+var _ = require('lodash');
+var URL = require('url-parse');
+var SHA1 = require('crypto-js/sha1');
+var defaultImageTypes = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'tiff', 'tif'];
 function serializeObjectKeys(obj) {
-  return _(obj)
-    .toPairs()
-    .sortBy((a) => a[0])
-    .map((a) => a[1])
-    .value();
+    return _(obj)
+        .toPairs()
+        .sortBy(function (a) { return a[0]; })
+        .map(function (a) { return a[1]; })
+        .value();
 }
-
 function getQueryForCacheKey(url, useQueryParamsInCacheKey) {
-  if (_.isArray(useQueryParamsInCacheKey)) {
-    return serializeObjectKeys(_.pick(url.query, useQueryParamsInCacheKey));
-  }
-  if (useQueryParamsInCacheKey) {
-    return serializeObjectKeys(url.query);
-  }
-  return "";
-}
-
-function generateCacheKey(url, useQueryParamsInCacheKey = true) {
-  const parsedUrl = new URL(url, null, true);
-
-  const pathParts = parsedUrl.pathname.split("/");
-
-  // last path part is the file name
-  const fileName = pathParts.pop();
-  const filePath = pathParts.join("/");
-
-  const parts = fileName.split(".");
-  const fileType = parts.length > 1 ? _.toLower(parts.pop()) : "";
-  const type = defaultImageTypes.includes(fileType) ? fileType : "jpg";
-
-  const cacheable =
-    filePath +
-    fileName +
-    type +
-    getQueryForCacheKey(parsedUrl, useQueryParamsInCacheKey);
-  return `${SHA1(cacheable)}.${type}`;
-}
-
-function getHostCachePathComponent(url) {
-  const { host } = new URL(url);
-
-  return `${host
-    .replace(/\.:/gi, "_")
-    .replace(/[^a-z0-9_]/gi, "_")
-    .toLowerCase()}_${SHA1(host)}`;
-}
-
-/**
- * handle the resolution of URLs to local file paths
- */
-var pathUtils = {
-  /**
-   * Given a URL and some options returns the file path in the file system corresponding to it's cached image location
-   * @param url
-   * @param cacheLocation
-   * @returns {string}
-   */
-  getImageFilePath(url, cacheLocation) {
-    const hostCachePath = getHostCachePathComponent(url);
-    const cacheKey = generateCacheKey(url);
-
-    return `${cacheLocation}/${hostCachePath}/${cacheKey}`;
-  },
-
-  /**
-   * Given a URL returns the relative file path combined from host and url hash
-   * @param url
-   * @returns {string}
-   */
-
-  getImageRelativeFilePath(url) {
-    const hostCachePath = getHostCachePathComponent(url);
-    const cacheKey = generateCacheKey(url);
-
-    return `${hostCachePath}/${cacheKey}`;
-  },
-
-  /**
-   * returns the url after removing all unused query params
-   * @param url
-   * @param useQueryParamsInCacheKey
-   * @returns {string}
-   */
-  getCacheableUrl(url, useQueryParamsInCacheKey) {
-    const parsedUrl = new URL(url, null, true);
     if (_.isArray(useQueryParamsInCacheKey)) {
-      parsedUrl.set("query", _.pick(parsedUrl.query, useQueryParamsInCacheKey));
+        return serializeObjectKeys(_.pick(url.query, useQueryParamsInCacheKey));
     }
-    if (!useQueryParamsInCacheKey) {
-      parsedUrl.set("query", {});
+    if (useQueryParamsInCacheKey) {
+        return serializeObjectKeys(url.query);
     }
-    return parsedUrl.toString();
-  },
+    return '';
+}
+function generateCacheKey(url, useQueryParamsInCacheKey) {
+    if (useQueryParamsInCacheKey === void 0) { useQueryParamsInCacheKey = true; }
+    var parsedUrl = new URL(url, null, true);
+    var pathParts = parsedUrl.pathname.split('/');
+    // last path part is the file name
+    var fileName = pathParts.pop();
+    var filePath = pathParts.join('/');
+    var parts = fileName.split('.');
+    var fileType = parts.length > 1 ? _.toLower(parts.pop()) : '';
+    var type = defaultImageTypes.includes(fileType) ? fileType : 'jpg';
+    var cacheable = filePath +
+        fileName +
+        type +
+        getQueryForCacheKey(parsedUrl, useQueryParamsInCacheKey);
+    return SHA1(cacheable) + "." + type;
+}
+function getHostCachePathComponent(url) {
+    var host = new URL(url).host;
+    return host
+        .replace(/\.:/gi, '_')
+        .replace(/[^a-z0-9_]/gi, '_')
+        .toLowerCase() + "_" + SHA1(host);
+}
+var pathUtils = {
+    /**
+     * Given a URL and some options returns the file path in the file system corresponding to it's cached image location
+     * @param url
+     * @param cacheLocation
+     * @returns {string}
+     */
+    getImageFilePath: function (url, cacheLocation) {
+        var hostCachePath = getHostCachePathComponent(url);
+        var cacheKey = generateCacheKey(url);
+        return cacheLocation + "/" + hostCachePath + "/" + cacheKey;
+    },
+    /**
+     * Given a URL returns the relative file path combined from host and url hash
+     * @param url
+     * @returns {string}
+     */
+    getImageRelativeFilePath: function (url) {
+        var hostCachePath = getHostCachePathComponent(url);
+        var cacheKey = generateCacheKey(url);
+        return hostCachePath + "/" + cacheKey;
+    },
+    /**
+     * returns the url after removing all unused query params
+     * @param url
+     * @param useQueryParamsInCacheKey
+     * @returns {string}
+     */
+    getCacheableUrl: function (url, useQueryParamsInCacheKey) {
+        var parsedUrl = new URL(url, null, true);
+        if (_.isArray(useQueryParamsInCacheKey)) {
+            parsedUrl.set('query', _.pick(parsedUrl.query, useQueryParamsInCacheKey));
+        }
+        if (!useQueryParamsInCacheKey) {
+            parsedUrl.set('query', {});
+        }
+        return parsedUrl.toString();
+    }
 };
 
 // import React, {Component} from 'react';
@@ -1694,11 +1645,9 @@ var defaultDefaultOptions = {
     cacheLocation: fs$1.dirs.CacheDir,
     allowSelfSignedSSL: false
 };
-var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
+var ImageCacheManager = function (defaultOptions, urlCache) {
     if (defaultOptions === void 0) { defaultOptions = {}; }
     if (urlCache === void 0) { urlCache = MemoryCache; }
-    if (fs === void 0) { fs = fsUtils; }
-    if (path === void 0) { path = pathUtils; }
     // apply default options
     defaults_1(defaultOptions, defaultDefaultOptions);
     var isCacheable = function (url) {
@@ -1713,7 +1662,7 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
         // allow CachedImage to provide custom options
         defaults_1(options, defaultOptions);
         // cacheableUrl contains only the needed query params
-        var cacheableUrl = path.getCacheableUrl(url, options === null || options === void 0 ? void 0 : options.useQueryParamsInCacheKey);
+        var cacheableUrl = pathUtils.getCacheableUrl(url, options === null || options === void 0 ? void 0 : options.useQueryParamsInCacheKey);
         // note: urlCache may remove the entry if it expired so we need to remove the leftover file manually
         return (urlCache
             .get(cacheableUrl)
@@ -1724,7 +1673,7 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
             }
             // console.log('ImageCacheManager: url cache hit', cacheableUrl);
             var cachedFilePath = (options === null || options === void 0 ? void 0 : options.cacheLocation) + "/" + fileRelativePath;
-            return fs.exists(cachedFilePath).then(function (exists) {
+            return fsUtils.exists(cachedFilePath).then(function (exists) {
                 if (exists) {
                     return cachedFilePath;
                 }
@@ -1733,10 +1682,10 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
         })
             // url is not found in the cache or is expired
             .catch(function () {
-            var fileRelativePath = path.getImageRelativeFilePath(cacheableUrl);
+            var fileRelativePath = pathUtils.getImageRelativeFilePath(cacheableUrl);
             var filePath = (options === null || options === void 0 ? void 0 : options.cacheLocation) + "/" + fileRelativePath;
             // remove expired file if exists
-            return (fs
+            return (fsUtils
                 .deleteFile(filePath)
                 // get the image to cache (download / copy / etc)
                 .then(function () { return getCachedFile === null || getCachedFile === void 0 ? void 0 : getCachedFile(filePath); })
@@ -1757,7 +1706,7 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
          */
         downloadAndCacheUrl: function (url, options, callbacks) {
             return cacheUrl(url, options || {}, function (filePath) {
-                return fs.downloadFile(url, filePath, options === null || options === void 0 ? void 0 : options.headers, callbacks);
+                return fsUtils.downloadFile(url, filePath, options === null || options === void 0 ? void 0 : options.headers, callbacks);
             });
         },
         /**
@@ -1769,7 +1718,7 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
          */
         seedAndCacheUrl: function (url, seedPath, options) {
             return cacheUrl(url, options || {}, function (filePath) {
-                return fs.copyFile(seedPath, filePath);
+                return fsUtils.copyFile(seedPath, filePath);
             });
         },
         /**
@@ -1783,13 +1732,13 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
                 return Promise.reject(new Error('Url is not cacheable'));
             }
             defaults_1(options, defaultOptions);
-            var cacheableUrl = path.getCacheableUrl(url, options === null || options === void 0 ? void 0 : options.useQueryParamsInCacheKey);
-            var filePath = path.getImageFilePath(cacheableUrl, options === null || options === void 0 ? void 0 : options.cacheLocation);
+            var cacheableUrl = pathUtils.getCacheableUrl(url, options === null || options === void 0 ? void 0 : options.useQueryParamsInCacheKey);
+            var filePath = pathUtils.getImageFilePath(cacheableUrl, options === null || options === void 0 ? void 0 : options.cacheLocation);
             // remove file from cache
             return (urlCache
                 .remove(cacheableUrl)
                 // remove file from disc
-                .then(function () { return fs.deleteFile(filePath); }));
+                .then(function () { return fsUtils.deleteFile(filePath); }));
         },
         /**
          * delete all cached file from the filesystem and cache
@@ -1798,7 +1747,9 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
          */
         clearCache: function (options) {
             defaults_1(options, defaultOptions);
-            return urlCache.flush().then(function () { return fs.cleanDir(options === null || options === void 0 ? void 0 : options.cacheLocation); });
+            return urlCache
+                .flush()
+                .then(function () { return fsUtils.cleanDir((options === null || options === void 0 ? void 0 : options.cacheLocation) || ''); });
         },
         /**
          * return info about the cache, list of files and the total size of the cache
@@ -1807,7 +1758,7 @@ var ImageCacheManager = function (defaultOptions, urlCache, fs, path) {
          */
         getCacheInfo: function (options) {
             defaults_1(options || {}, defaultOptions);
-            return fs.getDirInfo(options === null || options === void 0 ? void 0 : options.cacheLocation);
+            return fsUtils.getDirInfo((options === null || options === void 0 ? void 0 : options.cacheLocation) || '');
         }
     };
 };
@@ -3755,7 +3706,16 @@ var styles = reactNative.StyleSheet.create({
     },
 });
 
-var flattenStyle = reactNative.StyleSheet.flatten;
+var Loader = function (_a) {
+    var style = _a.style; _a.defaultSource; var loadingIndicatorProps = _a.loadingIndicatorProps, LoadingIndicator = _a.LoadingIndicator;
+    var imageStyle = [style, styles.loaderPlaceholder];
+    var activityIndicatorStyle = loadingIndicatorProps.style || styles.loader;
+    if (LoadingIndicator)
+        return (React__default['default'].createElement(reactNative.View, { style: [imageStyle, activityIndicatorStyle] },
+            React__default['default'].createElement(LoadingIndicator, __assign({}, loadingIndicatorProps))));
+    return (React__default['default'].createElement(reactNative.ActivityIndicator, __assign({}, loadingIndicatorProps, { style: activityIndicatorStyle })));
+};
+
 var CachedImage = function (_a) {
     var LoadingIndicator = _a.LoadingIndicator, fallbackSource = _a.fallbackSource, _b = _a.loadingIndicatorProps, loadingIndicatorProps = _b === void 0 ? {} : _b, _c = _a.callbacks, callbacks = _c === void 0 ? {
         onStartDownloading: function () { },
@@ -3764,12 +3724,11 @@ var CachedImage = function (_a) {
     var source = imageProps.source;
     var cachedImageRef = React.useRef(null).current;
     var downloadProgress = React.useRef(new reactNative.Animated.Value(0)).current;
-    var _d = React.useState(false), processingSource = _d[0], setProcessingSource = _d[1];
-    var _e = React.useState(true); _e[0]; _e[1];
-    var _f = React.useState(null), cachedImagePath = _f[0], setCachedImagePath = _f[1];
-    var _g = React.useState(true), isCacheable = _g[0], setIsCacheable = _g[1];
-    netinfo.useNetInfo().isInternetReachable;
     var imageCacheManagerRef = React.useRef(ImageCacheManager(cacheManagerOptions)).current;
+    var _d = React.useState(false), processingSource = _d[0], setProcessingSource = _d[1];
+    var _e = React.useState(null), cachedImagePath = _e[0], setCachedImagePath = _e[1];
+    var _f = React.useState(true), isCacheable = _f[0], setIsCacheable = _f[1];
+    // const { isInternetReachable } = useNetInfo()
     var processSource = React.useCallback(function (source, callbacks) {
         var url = _$1.get(source, ['uri'], null);
         downloadProgress.setValue(0);
@@ -3780,7 +3739,7 @@ var CachedImage = function (_a) {
             setCachedImagePath(cachedImagePath);
             setProcessingSource(false);
         })
-            .catch(function (err) {
+            .catch(function (_) {
             setCachedImagePath(null);
             setProcessingSource(false);
             setIsCacheable(false);
@@ -3800,28 +3759,8 @@ var CachedImage = function (_a) {
             progressTracker: progressTracker
         }));
     }, []);
-    var renderLoader = function () {
-        var _a;
-        var imageStyle = [style, styles.loaderPlaceholder];
-        var activityIndicatorStyle = loadingIndicatorProps.style || styles.loader;
-        var source = defaultSource;
-        // if the imageStyle has borderRadius it will break the loading image view on android
-        // so we only show the ActivityIndicator
-        if (!source ||
-            (reactNative.Platform.OS === 'android' && ((_a = flattenStyle(imageStyle)) === null || _a === void 0 ? void 0 : _a.borderRadius))) {
-            if (LoadingIndicator) {
-                return (React__default['default'].createElement(reactNative.View, { style: [imageStyle, activityIndicatorStyle] },
-                    React__default['default'].createElement(LoadingIndicator, __assign({}, loadingIndicatorProps, { progress: downloadProgress, style: style }))));
-            }
-            return (React__default['default'].createElement(reactNative.ActivityIndicator, __assign({}, loadingIndicatorProps, { style: [imageStyle, activityIndicatorStyle] })));
-        }
-        // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
-        return (React__default['default'].createElement(reactNative.ImageBackground, __assign({}, imageProps, { source: source, imageStyle: imageStyle, ref: cachedImageRef }), LoadingIndicator ? (React__default['default'].createElement(reactNative.View, { style: [imageStyle, activityIndicatorStyle] },
-            React__default['default'].createElement(LoadingIndicator, __assign({}, loadingIndicatorProps)))) : (React__default['default'].createElement(reactNative.ActivityIndicator, __assign({}, loadingIndicatorProps, { style: activityIndicatorStyle })))));
-    };
-    if (processingSource || (isCacheable && !cachedImagePath)) {
-        return renderLoader();
-    }
+    if (processingSource || (isCacheable && !cachedImagePath))
+        return (React__default['default'].createElement(Loader, { style: style, defaultSource: defaultSource, loadingIndicatorProps: loadingIndicatorProps, LoadingIndicator: LoadingIndicator }));
     var evaledSource = isCacheable && cachedImagePath
         ? {
             uri: "file://" + cachedImagePath
