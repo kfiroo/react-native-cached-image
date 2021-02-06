@@ -1,40 +1,24 @@
-import { noop, pick, keys } from "lodash";
-import { Component, Children, useEffect, useCallback, useRef } from "react";
-
-import { element, arrayOf, string, number, func } from "prop-types";
-
+import { noop } from "lodash";
+import { Children, useEffect, useCallback, useRef } from "react";
 import ImageCacheManager, { TOptions } from "./ImageCacheManager";
-import ImageCachePreloader from "./ImageCachePreloader";
-
-// static defaultProps = {
-//   urlsToPreload: [],
-//   numberOfConcurrentPreloads: 0,
-//   onPreloadComplete: noop,
-// };
-
-// static childContextTypes = {
-//   getImageCacheManager: any,
-// };
+import * as ImageCachePreloader from "./ImageCachePreloader";
 
 type Props =
   /*ImageCacheManager options */
   TOptions & {
     // only a single child so we can render it without adding a View
-
     children: any;
-
     // Preload urls
     urlsToPreload: string[];
     numberOfConcurrentPreloads?: number;
-
     onPreloadComplete?: any;
   };
 
 const ImageCacheProvider = ({
   children,
-  urlsToPreload,
-  numberOfConcurrentPreloads,
-  onPreloadComplete,
+  urlsToPreload = [],
+  numberOfConcurrentPreloads = 0,
+  onPreloadComplete = noop,
   ...imageCacheManagerOptions
 }: Props) => {
   const { current: imageCacheManager } = useRef(

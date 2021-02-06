@@ -2,6 +2,7 @@ import { TImageCacheManager } from "./ImageCacheManager";
 import times from "lodash/times";
 import clone from "lodash/clone";
 import noop from "lodash/noop";
+
 export type TPreloader = ReturnType<typeof createPreloader>;
 
 const createPreloader = (list: string[]) => {
@@ -35,25 +36,23 @@ function runPreloadTask(
   );
 }
 
-export default {
-  /**
-   * download and cache an list of urls
-   * @param urls
-   * @param imageCacheManager
-   * @param numberOfConcurrentPreloads
-   * @returns {Promise}
-   */
-  preloadImages: (
-    urls: string[],
-    imageCacheManager: TImageCacheManager,
-    numberOfConcurrentPreloads: number
-  ) => {
-    const preloader = createPreloader(urls);
-    const numberOfWorkers =
-      numberOfConcurrentPreloads > 0 ? numberOfConcurrentPreloads : urls.length;
-    const promises = times(numberOfWorkers, () =>
-      runPreloadTask(preloader, imageCacheManager)
-    );
-    return Promise.all(promises);
-  },
+/**
+ * download and cache an list of urls
+ * @param urls
+ * @param imageCacheManager
+ * @param numberOfConcurrentPreloads
+ * @returns {Promise}
+ */
+export const preloadImages = (
+  urls: string[],
+  imageCacheManager: TImageCacheManager,
+  numberOfConcurrentPreloads: number
+) => {
+  const preloader = createPreloader(urls);
+  const numberOfWorkers =
+    numberOfConcurrentPreloads > 0 ? numberOfConcurrentPreloads : urls.length;
+  const promises = times(numberOfWorkers, () =>
+    runPreloadTask(preloader, imageCacheManager)
+  );
+  return Promise.all(promises);
 };

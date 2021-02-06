@@ -9,7 +9,7 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "lib": ["dom", "dom.iterable", "esnext"],
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "./@types"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -20,5 +20,5 @@
     "baseUrl": "./src"
   },
   "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*", "example"]
+  "exclude": ["./node_modules", "./example", "**/__tests__/*"]
 }

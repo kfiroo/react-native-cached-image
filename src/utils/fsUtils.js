@@ -1,15 +1,16 @@
-const _ = require('lodash');
-
-const RNFetchBlob = require('rn-fetch-blob').default;
-
+import _ from "lodash";
+import RNFetchBlob from "rn-fetch-blob";
 const { fs } = RNFetchBlob;
 
 const activeDownloads = {};
 
 function getDirPath(path) {
   // if path is a file (has ext) remove it
-  if (path.charAt(path.length - 4) === '.' || path.charAt(path.length - 5) === '.') {
-    return _.initial(path.split('/')).join('/');
+  if (
+    path.charAt(path.length - 4) === "." ||
+    path.charAt(path.length - 5) === "."
+  ) {
+    return _.initial(path.split("/")).join("/");
   }
   return path;
 }
@@ -18,7 +19,7 @@ function ensurePath(path) {
   const dirPath = getDirPath(path);
   return fs
     .isDir(dirPath)
-    .then(isDir => {
+    .then((isDir) => {
       if (!isDir) {
         return (
           fs
@@ -26,17 +27,17 @@ function ensurePath(path) {
             // check if dir has indeed been created because
             // there's no exception on incorrect user-defined paths (?)...
             .then(() => fs.isDir(dirPath))
-            .then(isDir => {
+            .then((isDir) => {
               if (!isDir) {
-                throw new Error('Invalid cacheLocation');
+                throw new Error("Invalid cacheLocation");
               }
             })
         );
       }
     })
-    .catch(err => {
+    .catch((err) => {
       // ignore folder already exists errors
-      if (err.message.includes('folder already exists')) {
+      if (err.message.includes("folder already exists")) {
         return;
       }
       throw err;
@@ -46,18 +47,18 @@ function ensurePath(path) {
 function collectFilesInfo(basePath) {
   return fs
     .stat(basePath)
-    .then(info => {
-      if (info.type === 'file') {
+    .then((info) => {
+      if (info.type === "file") {
         return [info];
       }
-      return fs.ls(basePath).then(files => {
-        const promises = _.map(files, file => {
+      return fs.ls(basePath).then((files) => {
+        const promises = _.map(files, (file) => {
           return collectFilesInfo(`${basePath}/${file}`);
         });
         return Promise.all(promises);
       });
     })
-    .catch(err => {
+    .catch((err) => {
       return [];
     });
 }
@@ -65,7 +66,7 @@ function collectFilesInfo(basePath) {
 /**
  * wrapper around common filesystem actions
  */
-module.exports = {
+export default {
   /**
    * returns the local cache dir
    * @returns {String}
@@ -85,7 +86,11 @@ module.exports = {
    * @returns {Promise}
    */
   downloadFile(fromUrl, toFile, headers, callbacks) {
-    const { onStartDownloading, onFinishDownloading, progressTracker } = callbacks;
+    const {
+      onStartDownloading,
+      onFinishDownloading,
+      progressTracker,
+    } = callbacks;
     if (onStartDownloading) onStartDownloading();
 
     // use toFile as the key as is was created using the cacheKey
@@ -97,27 +102,31 @@ module.exports = {
         RNFetchBlob.config({
           path: tmpFile,
         })
-          .fetch('GET', fromUrl, headers)
+          .fetch("GET", fromUrl, headers)
           .progress((received, total) => {
             if (progressTracker) progressTracker(received, total);
           })
-          .then(res => {
+          .then((res) => {
             if (res.respInfo.status === 304) {
               return Promise.resolve(toFile);
             }
             const status = Math.floor(res.respInfo.status / 100);
             if (status !== 2) {
               // TODO - log / return error?
-              return Promise.reject(new Error("Couldn't retreive the image asset"));
+              return Promise.reject(
+                new Error("Couldn't retreive the image asset")
+              );
             }
 
-            return RNFetchBlob.fs.stat(tmpFile).then(fileStats => {
+            return RNFetchBlob.fs.stat(tmpFile).then((fileStats) => {
               // Verify if the content was fully downloaded!
               if (
-                res.respInfo.headers['Content-Length'] &&
-                res.respInfo.headers['Content-Length'] !== `${fileStats.size}`
+                res.respInfo.headers["Content-Length"] &&
+                res.respInfo.headers["Content-Length"] !== `${fileStats.size}`
               )
-                return Promise.reject(new Error('Image asset is not fully downloaded'));
+                return Promise.reject(
+                  new Error("Image asset is not fully downloaded")
+                );
 
               if (onFinishDownloading) onFinishDownloading();
 
@@ -125,11 +134,11 @@ module.exports = {
               return fs.mv(tmpFile, toFile);
             });
           })
-          .catch(error => {
+          .catch((error) => {
             // cleanup. will try re-download on next CachedImage mount.
             this.deleteFile(tmpFile);
             delete activeDownloads[toFile];
-            return Promise.reject(new Error('Download failed'));
+            return Promise.reject(new Error("Download failed"));
           })
           .then(() => {
             // cleanup
@@ -151,9 +160,9 @@ module.exports = {
   deleteFile(filePath) {
     return fs
       .stat(filePath)
-      .then(res => res && res.type === 'file')
-      .then(exists => exists && fs.unlink(filePath))
-      .catch(err => {
+      .then((res) => res && res.type === "file")
+      .then((exists) => exists && fs.unlink(filePath))
+      .catch((err) => {
         // swallow error to always resolve
       });
   },
@@ -176,7 +185,7 @@ module.exports = {
   cleanDir(dirPath) {
     return fs
       .isDir(dirPath)
-      .then(isDir => isDir && fs.unlink(dirPath))
+      .then((isDir) => isDir && fs.unlink(dirPath))
       .catch(() => {})
       .then(() => ensurePath(dirPath));
   },
@@ -189,15 +198,15 @@ module.exports = {
   getDirInfo(dirPath) {
     return fs
       .isDir(dirPath)
-      .then(isDir => {
+      .then((isDir) => {
         if (isDir) {
           return collectFilesInfo(dirPath);
         }
-        throw new Error('Dir does not exists');
+        throw new Error("Dir does not exists");
       })
-      .then(filesInfo => {
+      .then((filesInfo) => {
         const files = _.flattenDeep(filesInfo);
-        const size = _.sumBy(files, 'size');
+        const size = _.sumBy(files, "size");
         return {
           files,
           size,
