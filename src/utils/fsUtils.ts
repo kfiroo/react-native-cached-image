@@ -1,3 +1,4 @@
+import { translate } from 'localizations'
 import _ from 'lodash'
 import RNFetchBlob from 'rn-fetch-blob'
 const { fs } = RNFetchBlob
@@ -24,12 +25,12 @@ const ensurePath = (path: string) => {
         return (
           fs
             .mkdir(dirPath)
-            // check if dir has indeed been created because
-            // there's no exception on incorrect user-defined paths (?)...
+            /* check if dir has indeed been created because
+             * there's no exception on incorrect user-defined paths (?)... */
             .then(() => fs.isDir(dirPath))
             .then((isDir) => {
               if (!isDir) {
-                throw new Error('Invalid cacheLocation')
+                throw new Error(translate('fs_utils.invalid_loc'))
               }
             })
         )
@@ -82,11 +83,8 @@ const fsUtils = {
    * @returns {Promise}
    */
   downloadFile(fromUrl: string, toFile: string, headers: any, callbacks: any) {
-    const {
-      onStartDownloading,
-      onFinishDownloading,
-      progressTracker
-    } = callbacks
+    const { onStartDownloading, onFinishDownloading, progressTracker } =
+      callbacks
     if (onStartDownloading) onStartDownloading()
 
     // use toFile as the key as is was created using the cacheKey
@@ -110,7 +108,7 @@ const fsUtils = {
             if (status !== 2) {
               // TODO - log / return error?
               return Promise.reject(
-                new Error("Couldn't retreive the image asset")
+                new Error(translate('fs_utils.download_file.unreachable'))
               )
             }
 
@@ -121,7 +119,7 @@ const fsUtils = {
                 res.respInfo.headers['Content-Length'] !== `${fileStats.size}`
               )
                 return Promise.reject(
-                  new Error('Image asset is not fully downloaded')
+                  new Error(translate('fs_utils.download_file.incomplete'))
                 )
 
               if (onFinishDownloading) onFinishDownloading()
@@ -134,7 +132,9 @@ const fsUtils = {
             // cleanup. will try re-download on next CachedImage mount.
             this.deleteFile(tmpFile)
             delete activeDownloads[toFile]
-            return Promise.reject(new Error('Download failed'))
+            return Promise.reject(
+              new Error(translate('fs_utils.download_file.failure'))
+            )
           })
           .then(() => {
             // cleanup

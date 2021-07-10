@@ -1,26 +1,26 @@
-import { TImageCacheManager } from "./ImageCacheManager";
-import times from "lodash/times";
-import clone from "lodash/clone";
-import noop from "lodash/noop";
+import { TImageCacheManager } from './ImageCacheManager'
+import times from 'lodash/times'
+import clone from 'lodash/clone'
+import noop from 'lodash/noop'
 
-export type TPreloader = ReturnType<typeof createPreloader>;
+export type TPreloader = ReturnType<typeof createPreloader>
 
 const createPreloader = (list: string[]) => {
-  const urls = clone(list);
+  const urls = clone(list)
   return {
     next: () => {
-      return urls.shift();
-    },
-  };
-};
+      return urls.shift()
+    }
+  }
+}
 
 function runPreloadTask(
   prefetcher: TPreloader,
   imageCacheManager: TImageCacheManager
 ) {
-  const url = prefetcher.next();
+  const url = prefetcher.next()
   if (!url) {
-    return Promise.resolve();
+    return Promise.resolve()
   }
   // console.log('START', url);
   return (
@@ -33,11 +33,11 @@ function runPreloadTask(
       // })
       // then run next task
       .then(() => runPreloadTask(prefetcher, imageCacheManager))
-  );
+  )
 }
 
 /**
- * download and cache an list of urls
+ * download and cache a list of urls
  * @param urls
  * @param imageCacheManager
  * @param numberOfConcurrentPreloads
@@ -48,11 +48,11 @@ export const preloadImages = (
   imageCacheManager: TImageCacheManager,
   numberOfConcurrentPreloads: number
 ) => {
-  const preloader = createPreloader(urls);
+  const preloader = createPreloader(urls)
   const numberOfWorkers =
-    numberOfConcurrentPreloads > 0 ? numberOfConcurrentPreloads : urls.length;
+    numberOfConcurrentPreloads > 0 ? numberOfConcurrentPreloads : urls.length
   const promises = times(numberOfWorkers, () =>
     runPreloadTask(preloader, imageCacheManager)
-  );
-  return Promise.all(promises);
-};
+  )
+  return Promise.all(promises)
+}

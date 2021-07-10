@@ -1,14 +1,16 @@
 import _, { get } from 'lodash'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ImageProps, ImageBackground, Animated, ImageStyle } from 'react-native'
-import ImageCacheManager, { TOptions } from '../ImageCacheManager'
+import ImageCacheManager, {
+  TImageCacheManagerOptions
+} from '../ImageCacheManager'
 import { useNetInfo } from '@react-native-community/netinfo'
 import { ObjectLiteral } from '../typings'
 import styles from './styles'
 import Loader from './Loader'
 
 type Props = ImageProps & /*  ImageCacheManager options */ {
-  cacheManagerOptions?: TOptions
+  cacheManagerOptions?: TImageCacheManagerOptions
   loadingIndicatorProps?: ObjectLiteral
   callbacks?: {
     onStartDownloading: () => any
