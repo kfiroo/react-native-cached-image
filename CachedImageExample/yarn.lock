@@ -3084,13 +3084,17 @@ lodash.templatesettings@^3.0.0:
     lodash._reinterpolate "^3.0.0"
     lodash.escape "^3.0.0"
 
-lodash@4.17.4, lodash@^4.14.0, lodash@^4.2.0, lodash@^4.3.0, lodash@^4.6.1:
-  version "4.17.4"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
+lodash@4.17.19:
+  version "4.17.19"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
 
 lodash@^3.5.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
+
+lodash@^4.14.0, lodash@^4.2.0, lodash@^4.3.0, lodash@^4.6.1:
+  version "4.17.4"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
 
 lodash@^4.16.6:
   version "4.17.2"
@@ -3630,8 +3634,8 @@ path-key@^2.0.0:
   resolved "https://registry.yarnpkg.com/path-key/-/path-key-2.0.1.tgz#411cadb574c5a140d3a4b1910d40d80cc9f40b40"
 
 path-parse@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.5.tgz#3c1adf871ea9cd6c9431b6ea2bd74a0ff055c4c1"
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.7.tgz#fbc114b60ca42b30d9daf5858e4bd68bbedb6735"
 
 path-type@^1.0.0:
   version "1.1.0"
@@ -3814,10 +3818,10 @@ react-devtools-core@^2.5.0:
     ws "^2.0.3"
 
 react-native-cached-image@../:
-  version "1.4.0-rc"
+  version "1.4.3"
   dependencies:
     crypto-js "3.1.9-1"
-    lodash "4.17.4"
+    lodash "4.17.19"
     prop-types "15.5.10"
     react-native-clcasher "1.0.0"
     react-native-fetch-blob "0.10.8"
