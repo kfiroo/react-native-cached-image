@@ -16,10 +16,11 @@ const {
     View,
     ImageBackground,
     ActivityIndicator,
-    NetInfo,
     Platform,
     StyleSheet,
 } = ReactNative;
+
+import NetInfo from "@react-native-community/netinfo";
 
 const styles = StyleSheet.create({
     image: {
@@ -79,9 +80,10 @@ class CachedImage extends React.Component {
 
     componentWillMount() {
         this._isMounted = true;
-        NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
+        NetInfo.addEventListener(this.handleConnectivityChange);
+        // NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
         // initial
-        NetInfo.isConnected.fetch()
+        NetInfo.fetch()
             .then(isConnected => {
                 this.safeSetState({
                     networkAvailable: isConnected
@@ -93,7 +95,8 @@ class CachedImage extends React.Component {
 
     componentWillUnmount() {
         this._isMounted = false;
-        NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+        // NetInfo.isConnected.removeEventListener('connectionChange', this.handleConnectivityChange);
+        NetInfo.removeEventListener(this.handleConnectivityChange);
     }
 
     componentWillReceiveProps(nextProps) {
