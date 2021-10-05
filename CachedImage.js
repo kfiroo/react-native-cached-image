@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
 });
 
 function getImageProps(props) {
-    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'LoadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
+    return _.omit(props, ['source', 'defaultSource', 'fallbackSource', 'loadingIndicator', 'activityIndicatorProps', 'style', 'useQueryParamsInCacheKey', 'renderImage', 'resolveHeaders']);
 }
 
 const CACHED_IMAGE_REF = 'cachedImage';
@@ -199,14 +199,14 @@ class CachedImage extends React.Component {
             if (LoadingIndicator) {
                 return (
                     <View style={[imageStyle, activityIndicatorStyle]}>
-                        <LoadingIndicator {...activityIndicatorProps} />
+                        <LoadingIndicator {...activityIndicatorProps} color="#063f71" />
                     </View>
                 );
             }
             return (
                 <ActivityIndicator
                     {...activityIndicatorProps}
-                    style={[imageStyle, activityIndicatorStyle]}/>
+                    style={[imageStyle, activityIndicatorStyle]} color="#063f71"/>
             );
         }
         // otherwise render an image with the defaultSource with the ActivityIndicator on top of it
@@ -218,11 +218,11 @@ class CachedImage extends React.Component {
             children: (
                 LoadingIndicator
                     ? <View style={[imageStyle, activityIndicatorStyle]}>
-                    <LoadingIndicator {...activityIndicatorProps} />
+                    <LoadingIndicator {...activityIndicatorProps} color="#063f71"/>
                 </View>
                     : <ActivityIndicator
                     {...activityIndicatorProps}
-                    style={activityIndicatorStyle}/>
+                    style={activityIndicatorStyle} color="#063f71"/>
             )
         });
     }
